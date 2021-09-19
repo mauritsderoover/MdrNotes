@@ -9,9 +9,6 @@
 
         <ContextMenu ref="menu" :model="items" />
       </div>
-      <div class="card p-col-2">
-        <PanelMenu2 :model="mainItems" />
-      </div>
       <rawDisplayer class="p-col-2" :value="mainItems" title="List" />
       <div class="p-col-6">
         <Editor editor-id="editorId" />
@@ -23,7 +20,6 @@
 <script>
 import TabMenu from "primevue/tabmenu";
 import PanelMenu from "./actioncomponents/MenuComponents/DraggablePanelMenu.vue";
-import PanelMenu2 from "./actioncomponents/MenuComponents/PanelMenu";
 import Editor from "@/modules/editor/actioncomponents/EditorComponents/Editor";
 import ContextMenu from "primevue/contextmenu";
 import rawDisplayer from "@/modules/editor/genericcomponents/rawDisplayer";
@@ -35,7 +31,6 @@ export default {
     PanelMenu,
     Editor,
     ContextMenu,
-    PanelMenu2,
     rawDisplayer,
   },
   data() {
