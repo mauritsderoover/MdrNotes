@@ -1,9 +1,10 @@
 <template>
-  <div class="p-panelmenu p-component">
+  <div class="p-panelmenu p-component" ref="elements">
     <draggable
       :list="model"
       item-key="key"
       :disabled="false"
+      :group="{ name: 'g1' }"
       @start="drag = true"
       @end="drag = false"
     >
@@ -27,7 +28,7 @@
                   :class="
                     getHeaderLinkClass(element, { isActive, isExactActive })
                   "
-                  @click="onItemClick($event, element, navigate)"
+                  @click="catchClickEvent($event, element, navigate)"
                 >
                   <span
                     v-if="element.icon"
@@ -44,14 +45,34 @@
                 :tabindex="disabled(element) ? null : '0'"
                 :aria-expanded="isActive(element)"
                 :aria-controls="ariaId + '_content'"
-                @click="onItemClick($event, element)"
+                @click="catchClickEvent($event, element)"
               >
                 <span
                   v-if="element.items"
                   :class="getPanelToggleIcon(element)"
                 ></span>
                 <span v-if="element.icon" :class="getPanelIcon(element)"></span>
-                <span class="p-menuitem-text">{{ element.label }}</span>
+                <span
+                  v-if="!changeLabel || !isDoubleClickedItem(element)"
+                  class="p-menuitem-text"
+                  >{{ element.label }}</span
+                >
+                <form
+                  v-if="changeLabel && isDoubleClickedItem(element)"
+                  class="p-menuitem-text"
+                  :name="element.key"
+                  :ref="'form_' + element.key"
+                >
+                  <input
+                    type="text"
+                    class="p-menuitem-text"
+                    :id="ariaId + '_input'"
+                    v-model="element.label"
+                    @keydown.enter="abortLabelChange"
+                    :placeholder="element.label"
+                    :ref="'input_' + element.key"
+                  />
+                </form>
               </a>
             </template>
             <component :is="$slots.element" v-else :item="element"></component>
@@ -65,13 +86,14 @@
               :aria-labelledby="ariaId + '_header'"
             >
               <div v-if="element.items" class="p-panelmenu-content">
-                <PanelMenuSub
+                <DraggablePanelMenu
                   :model="element.items"
                   class="p-panelmenu-root-submenu"
                   :template="$slots.element"
                   :expanded-keys="expandedKeys"
                   :exact="exact"
-                  @item-toggle="updateExpandedKeys"
+                  :submenu="true"
+                  @update:expandedKeys="updateExpandedKeys"
                 />
               </div>
             </div>
@@ -83,14 +105,13 @@
 </template>
 
 <script>
-import PanelMenuSub from "./PanelMenuSub.vue";
 import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
+import { compareObject } from "@/genericcomponents/utils";
 
 export default {
-  name: "PanelMenu",
+  name: "DraggablePanelMenu",
   components: {
-    PanelMenuSub: PanelMenuSub,
     draggable,
   },
   props: {
@@ -106,26 +127,30 @@ export default {
       type: Boolean,
       default: true,
     },
+    submenu: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ["update:expandedKeys"],
+  mounted() {
+    document.addEventListener("click", this.onClickOutside);
+  },
+  beforeUnmount() {
+    document.removeEventListener("click", this.onClickOutside);
+  },
   data() {
     return {
       activeItem: null,
+      doubleClickedItem: null,
       drag: false,
-      testing: [
-        {
-          label: "maurits",
-          id: 0,
-        },
-        {
-          label: "Emily",
-          id: 1,
-        },
-      ],
+      delay: 160,
+      clicks: 0,
+      timer: null,
+      changeLabel: false,
+      currentTarget: null,
+      inputElement: null,
     };
-  },
-  mounted() {
-    console.log(this.model);
   },
   computed: {
     ariaId() {
@@ -133,6 +158,48 @@ export default {
     },
   },
   methods: {
+    abortLabelChange() {
+      this.changeLabel = false;
+      this.doubleClickedItem = null;
+    },
+    onClickOutside(event) {
+      if (this.changeLabel) {
+        if (this.currentTarget !== event.target) {
+          if (this.inputElement !== event.target) {
+            this.abortLabelChange();
+          }
+        }
+      }
+    },
+    catchClickEvent(event, item, navigate) {
+      this.clicks++;
+      if (this.clicks === 1) {
+        this.timer = setTimeout(() => {
+          this.onItemClick(event, item, navigate);
+          this.clicks = 0;
+        }, this.delay);
+      } else {
+        clearTimeout(this.timer);
+        this.onItemDoubleClick(event, item);
+        this.clicks = 0;
+      }
+    },
+    onItemDoubleClick(event, item) {
+      if (this.isActive(item) && this.activeItem === null) {
+        this.activeItem = item;
+      }
+      this.doubleClickedItem = item;
+      this.currentTarget = event.target;
+      if (this.disabled(item)) {
+        event.preventDefault();
+      }
+      this.changeLabel = true;
+
+      setTimeout(() => {
+        this.inputElement = this.$refs[`input_${item.key}`];
+        this.$refs[`input_${item.key}`].focus();
+      }, 0);
+    },
     onItemClick(event, item, navigate) {
       if (this.isActive(item) && this.activeItem === null) {
         this.activeItem = item;
@@ -174,22 +241,37 @@ export default {
       }
     },
     getPanelClass(item) {
-      return ["p-panelmenu-panel", item.class];
+      if (this.submenu) {
+        return ["p-menuitem", item.className];
+      } else {
+        return ["p-panelmenu-panel", item.class];
+      }
     },
     getPanelToggleIcon(item) {
       const active = this.isActive(item);
-      return [
-        "p-panelmenu-icon pi",
-        { "pi-chevron-right": !active, " pi-chevron-down": active },
-      ];
+      if (this.submenu) {
+        return [
+          "p-panelmenu-icon pi pi-fw",
+          { "pi-angle-right": !active, "pi-angle-down": active },
+        ];
+      } else {
+        return [
+          "p-panelmenu-icon pi",
+          { "pi-chevron-right": !active, " pi-chevron-down": active },
+        ];
+      }
     },
     getPanelIcon(item) {
       return ["p-menuitem-icon", item.icon];
     },
     getHeaderLinkClass(item, routerProps) {
+      const classString = this.submenu
+        ? "p-menuitem-link"
+        : "p-panelmenu-header-link";
       return [
-        "p-panelmenu-header-link",
+        classString,
         {
+          "p-disabled": this.disabled(item),
           "router-link-active": routerProps && routerProps.isActive,
           "router-link-active-exact":
             this.exact && routerProps && routerProps.isExactActive,
@@ -201,17 +283,23 @@ export default {
         ? this.expandedKeys[item.key]
         : item === this.activeItem;
     },
+    isDoubleClickedItem(item) {
+      return compareObject(item, this.doubleClickedItem);
+    },
     getHeaderClass(item) {
-      return [
-        "p-component p-panelmenu-header",
-        {
-          "p-highlight": this.isActive(item),
-          "p-disabled": this.disabled(item),
-        },
-      ];
+      if (this.submenu) {
+        return ["p-menuitem", item.className];
+      } else {
+        return [
+          "p-component p-panelmenu-header",
+          {
+            "p-highlight": this.isActive(item),
+            "p-disabled": this.disabled(item),
+          },
+        ];
+      }
     },
     visible(item) {
-      console.log("this is in visible", item);
       return typeof item.visible === "function"
         ? item.visible()
         : item.visible !== false;

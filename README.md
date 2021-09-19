@@ -1,4 +1,4 @@
-# trial
+# SolidNotes
 
 ## Project setup
 ```

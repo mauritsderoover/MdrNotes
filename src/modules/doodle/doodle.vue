@@ -1,15 +1,11 @@
 <template>
-<div>
-  TODO
-</div>
+  <div>TODO</div>
 </template>
 
 <script>
 export default {
-  name: "doodle"
-}
+  name: "doodle",
+};
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
