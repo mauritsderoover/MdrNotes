@@ -1,9 +1,8 @@
 <template>
   <div>
-    <div ref="editor" v-bind="value">
-    </div>
-    <br>
-    <Button label="Save" @click="saveContents"/>
+    <div ref="editor" v-bind="value"></div>
+    <br />
+    <Button label="Save" @click="saveContents" />
   </div>
 </template>
 
@@ -12,14 +11,14 @@ import Quill from "quill";
 import Button from "primevue/button";
 
 export default {
+  components: {
+    Button,
+  },
   props: {
     value: {
       type: String,
-      default: ""
-    }
-  },
-  components: {
-    Button,
+      default: "",
+    },
   },
   data() {
     return {
@@ -34,43 +33,45 @@ export default {
       theme: "snow",
       modules: {
         toolbar: [
-          [{header: [1, 2, false]}],
-          ['bold', 'italic', 'underline'],
-          ['image', 'code-block']
-        ]
+          [{ header: [1, 2, false] }],
+          ["bold", "italic", "underline"],
+          ["image", "code-block"],
+        ],
       },
     });
     this.editor.root.innerHTML = this.value;
     this.getNotes();
-    this.editor.on('text-change', () => {
-      console.log(JSON.stringify(this.editor.getContents()))
+    this.editor.on("text-change", () => {
+      console.log(JSON.stringify(this.editor.getContents()));
     });
   },
   methods: {
     saveContents() {
-      this.download(JSON.stringify(this.editor.getContents()), "test.json", 'application/json')
+      this.download(
+        JSON.stringify(this.editor.getContents()),
+        "test.json",
+        "application/json"
+      );
     },
     download(content, fileName, contentType) {
-      const a = document.createElement("a")
-      const file = new Blob([content], {type: contentType});
-      a.href = URL.createObjectURL(file)
+      const a = document.createElement("a");
+      const file = new Blob([content], { type: contentType });
+      a.href = URL.createObjectURL(file);
       a.download = fileName;
-      a.click()
+      a.click();
     },
     getNotes() {
       console.log(window.location.pathname);
-      const axios = require('axios')
+      const axios = require("axios");
       axios.get("/notes.json").then((response) => {
         console.log(response);
-        this.editor.setContents(response.data)
-      } )
-
-    }
+        this.editor.setContents(response.data);
+      });
+    },
   },
-}
+};
 </script>
 
 <style scoped>
 @import "https://cdn.quilljs.com/1.3.6/quill.snow.css";
-
 </style>
