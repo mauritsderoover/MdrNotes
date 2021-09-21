@@ -6,7 +6,7 @@
         label="Editor"
         icon="pi pi-check"
         class="p-button-help p-mr-2"
-        @click="setComponent('EditorDashboard')"
+        @click="setComponent('MainDashboard')"
       />
       <Button
         label="Hello World"
@@ -16,13 +16,14 @@
       />
     </template>
   </Toolbar>
-  <EditorDashboard v-if="show" />
+  <MainDashboard v-if="show" />
   <HelloWorld v-if="!show" />
 </template>
 
 <script>
 import HelloWorld from "./modules/HelloWorld.vue";
-import EditorDashboard from "@/modules/editor/EditorDashboard";
+// import EditorDashboard from "@/modules/editor/SubDashboard";
+import MainDashboard from "@/modules/editor/MainDashboard";
 import Button from "primevue/button";
 import Toolbar from "primevue/toolbar";
 
@@ -32,11 +33,11 @@ export default {
     HelloWorld,
     Button,
     Toolbar,
-    EditorDashboard,
+    MainDashboard,
   },
   data() {
     return {
-      currentTab: "EditorDashboard",
+      currentTab: "MainDashboard",
       show: true,
     };
   },

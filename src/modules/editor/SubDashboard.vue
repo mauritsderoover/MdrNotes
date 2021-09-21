@@ -1,8 +1,5 @@
 <template>
   <div>
-    <div class="card">
-      <TabMenu :model="items" />
-    </div>
     <div class="p-grid">
       <div class="card p-col-2">
         <PanelMenu :model="mainItems" @contextmenu="onImageRightClick" />
@@ -10,7 +7,7 @@
         <ContextMenu ref="menu" :model="items" />
       </div>
       <rawDisplayer class="p-col-2" :value="mainItems" title="List" />
-      <div class="p-col-6">
+      <div class="p-col-8">
         <Editor editor-id="editorId" />
       </div>
     </div>
@@ -18,20 +15,27 @@
 </template>
 
 <script>
-import TabMenu from "primevue/tabmenu";
 import PanelMenu from "./actioncomponents/MenuComponents/DraggablePanelMenu.vue";
 import Editor from "@/modules/editor/actioncomponents/EditorComponents/Editor";
 import ContextMenu from "primevue/contextmenu";
 import rawDisplayer from "@/modules/editor/genericcomponents/rawDisplayer";
+import axios from "axios";
 
 export default {
   name: "EditorDashboard",
+  props: {
+    tab: {
+      type: String,
+    },
+  },
   components: {
-    TabMenu,
     PanelMenu,
     Editor,
     ContextMenu,
     rawDisplayer,
+  },
+  mounted() {
+    console.log("SubDashboard has been mounted");
   },
   data() {
     return {
@@ -72,6 +76,27 @@ export default {
     };
   },
   methods: {
+    loadData() {
+      axios
+        .get("")
+        .then((data) => {
+          this.mainItems = data.data;
+        })
+        .catch(() => {
+          this.mainItems = [
+            {
+              label: "Add page",
+              icon: "pi pi-fw pi-plus",
+              key: "main-item-0",
+              command: (event) => {
+                this.currentItem = event.item;
+                this.addItem("untitled");
+                console.log(event);
+              },
+            },
+          ];
+        });
+    },
     testing(event) {
       console.log("this is happening \n", this.currentItem, "\n", event);
     },

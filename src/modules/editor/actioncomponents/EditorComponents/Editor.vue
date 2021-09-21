@@ -9,6 +9,7 @@
 <script>
 import Quill from "quill";
 import Button from "primevue/button";
+import { saveJsonFile } from "@/genericcomponents/utils";
 
 export default {
   components: {
@@ -18,6 +19,9 @@ export default {
     value: {
       type: String,
       default: "",
+    },
+    identifier: {
+      type: String,
     },
   },
   data() {
@@ -47,21 +51,12 @@ export default {
   },
   methods: {
     saveContents() {
-      this.download(
+      saveJsonFile(
         JSON.stringify(this.editor.getContents()),
-        "test.json",
-        "application/json"
+        `${this.identifier}.json`
       );
     },
-    download(content, fileName, contentType) {
-      const a = document.createElement("a");
-      const file = new Blob([content], { type: contentType });
-      a.href = URL.createObjectURL(file);
-      a.download = fileName;
-      a.click();
-    },
     getNotes() {
-      console.log(window.location.pathname);
       const axios = require("axios");
       axios.get("/notes.json").then((response) => {
         console.log(response);
