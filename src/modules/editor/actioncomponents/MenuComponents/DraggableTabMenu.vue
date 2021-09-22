@@ -1,67 +1,85 @@
 <template>
   <div class="p-tabmenu p-component">
-    <ul ref="nav" class="p-tabmenu-nav p-reset" role="tablist">
-      <template
-        v-for="(item, i) of model"
-        :key="item.label + '_' + i.toString()"
-      >
-        <router-link
-          v-if="item.to && !disabled(item)"
-          :to="item.to"
-          custom
-          v-slot="{ navigate, href, isActive, isExactActive }"
+    <div ref="nav" class="p-tabmenu-nav p-reset" role="tablist">
+      <template v-for="(item, index) of model">
+        <div
+          v-if="visible(item)"
+          :class="getItemClass(item, index)"
+          :style="item.style"
+          :key="index"
         >
-          <li
-            :class="getRouteItemClass(item, isActive, isExactActive)"
-            :style="item.style"
-            v-if="visible(item)"
-            role="tab"
-          >
+          <div :class="getItemClass(item, index)" :style="item.style">
             <template v-if="!$slots.item">
-              <a
-                :href="href"
-                class="p-menuitem-link"
-                @click="onItemClick($event, item, i, navigate)"
-                role="presentation"
-                v-ripple
+              <router-link
+                v-if="item.to && !disabled(item)"
+                v-slot="{ navigate, href, isActive, isExactActive }"
+                :to="item.to"
+                custom
               >
-                <span :class="getItemIcon(item)" v-if="item.icon"></span>
-                <span class="p-menuitem-text">{{ item.label }}</span>
+                <a
+                  :href="href"
+                  class="p-menuitem-link"
+                  :class="getRouteItemClass(item, isActive, isExactActive)"
+                  :style="item.style"
+                  @click="catchClickEvent($event, item, index, navigate)"
+                >
+                  <span v-if="item.icon" :class="getItemIcon(item)"></span>
+                  <span class="p-menuitem-text">{{ item.label }}</span>
+                </a>
+              </router-link>
+              <a
+                v-else
+                :id="ariaId + '_header'"
+                :href="item.url"
+                :class="getItemClass(item, index)"
+                :tabindex="disabled(item) ? null : '0'"
+                :aria-expanded="isActive(element)"
+                :aria-controls="ariaId + '_content'"
+                class="p-menuitem-link"
+                @click="catchClickEvent($event, item, index)"
+              >
+                <span v-if="item.icon" :class="getItemIcon(item)"></span>
+                <span
+                  v-if="!changeLabel || !isDoubleClickedItem(item)"
+                  class="p-menuitem-text"
+                  >{{ item.label }}</span
+                >
+                <form
+                  v-if="changeLabel && isDoubleClickedItem(item)"
+                  class="p-menuitem-text"
+                  :name="item.key"
+                  :ref="'form_' + item.key"
+                >
+                  <input
+                    type="text"
+                    class="p-menuitem-text"
+                    :id="ariaId + '_input'"
+                    v-model="item.label"
+                    @keydown.enter="abortLabelChange"
+                    :placeholder="item.label"
+                    :ref="'input_' + item.key"
+                  />
+                </form>
               </a>
             </template>
-            <component v-else :is="$slots.item" :item="item"></component>
-          </li>
-        </router-link>
-        <li v-else-if="visible(item)" :class="getItemClass(item, i)" role="tab">
-          <template v-if="!$slots.item">
-            <a
-              :href="item.url"
-              class="p-menuitem-link"
-              :target="item.target"
-              @click="onItemClick($event, item, i)"
-              role="presentation"
-              :tabindex="disabled(item) ? null : '0'"
-              v-ripple
-            >
-              <span :class="getItemIcon(item)" v-if="item.icon"></span>
-              <span class="p-menuitem-text">{{ item.label }}</span>
-            </a>
-          </template>
-          <component v-else :is="$slots.item" :item="item"></component>
-        </li>
+            <component :is="$slots.item" v-else :item="item"></component>
+          </div>
+        </div>
       </template>
-      <li ref="inkbar" class="p-tabmenu-ink-bar"></li>
-    </ul>
+    </div>
   </div>
 </template>
 
 <script>
-import { DomHandler } from "primevue/utils";
-import Ripple from "primevue/ripple";
+import { UniqueComponentId } from "primevue/utils";
+import draggable from "vuedraggable";
+import { compareObject } from "@/genericcomponents/utils";
 
 export default {
   name: "DraggableTabMenu",
-  emits: ["update:activeIndex", "tab-change"],
+  components: {
+    draggable,
+  },
   props: {
     model: {
       type: Array,
@@ -76,31 +94,93 @@ export default {
       default: 0,
     },
   },
-  timeout: null,
+  emits: ["update:activeIndex", "tab-change"],
   data() {
     return {
       d_activeIndex: this.activeIndex,
+      activeItem: null,
+      draggable: false,
+      delay: 160,
+      clicks: 0,
+      timer: null,
+      changeLabel: false,
+      currentTarget: null,
+      inputitem: null,
+      doubleClickedItem: null,
     };
   },
   mounted() {
-    this.updateInkBar();
-  },
-  updated() {
-    this.updateInkBar();
+    document.addEventListener("click", this.onClickOutside);
   },
   beforeUnmount() {
-    clearTimeout(this.timeout);
+    document.removeEventListener("click", this.onClickOutside);
   },
-  watch: {
-    $route() {
-      this.timeout = setTimeout(() => this.updateInkBar(), 50);
-    },
-    activeIndex(newValue) {
-      this.d_activeIndex = newValue;
+  computed: {
+    ariaId() {
+      return UniqueComponentId();
     },
   },
   methods: {
+    abortLabelChange() {
+      console.log("this is called in abortLabelChange");
+      this.changeLabel = false;
+      this.doubleClickedItem = null;
+    },
+    onClickOutside(event) {
+      console.log("this is called in onclickoutside");
+      console.log("The event target", event.target);
+      console.log("the change label", this.changeLabel);
+      console.log("this currentTarget", this.currentTarget);
+      console.log("this is input item", this.inputitem);
+      if (this.changeLabel) {
+        if (this.currentTarget !== event.target) {
+          if (this.inputitem !== event.target) {
+            console.log("this is called in onclickoutside");
+            this.abortLabelChange();
+          }
+        }
+      }
+    },
+    catchClickEvent(event, item, index, navigate) {
+      this.clicks++;
+      if (this.clicks === 1) {
+        this.timer = setTimeout(() => {
+          this.onItemClick(event, item, index, navigate);
+          this.clicks = 0;
+        }, this.delay);
+      } else {
+        clearTimeout(this.timer);
+        this.onItemDoubleClick(event, item, index);
+        this.clicks = 0;
+      }
+    },
+    onItemDoubleClick(event, item, index) {
+      console.log("this is run in item double click");
+      if (this.isActive(item) && this.activeItem === null) {
+        this.activeItem = item;
+      }
+      this.doubleClickedItem = item;
+      this.currentTarget = event.target;
+      if (this.disabled(item)) {
+        event.preventDefault();
+      }
+      this.changeLabel = true;
+
+      setTimeout(() => {
+        this.inputitem = this.$refs[`input_${item.key}`];
+        console.log("this is refs", this.$refs);
+        console.log(
+          "this is input item in on item double click",
+          this.inputitem
+        );
+        this.$refs[`input_${item.key}`].focus();
+      }, 0);
+    },
     onItemClick(event, item, index, navigate) {
+      if (this.isActive(item) && this.activeItem === null) {
+        this.activeItem = item;
+      }
+
       if (this.disabled(item)) {
         event.preventDefault();
         return;
@@ -117,22 +197,30 @@ export default {
         navigate(event);
       }
 
-      if (index !== this.d_activeIndex) {
-        this.d_activeIndex = index;
-        this.$emit("update:activeIndex", this.d_activeIndex);
-      }
+      if (this.activeItem && this.activeItem === item) this.activeItem = null;
+      else this.activeItem = item;
 
       this.$emit("tab-change", {
         originalEvent: event,
         index: index,
       });
     },
-    getItemClass(item, index) {
+    isDoubleClickedItem(item) {
+      // console.log("this is in double clicked item to check objects");
+      // console.log("this is item", item);
+      // console.log("this double clicked item", this.doubleClickedItem);
+      console.log(
+        "The two objects are the same",
+        compareObject(item, this.doubleClickedItem)
+      );
+      return compareObject(item, this.doubleClickedItem);
+    },
+    getItemClass(item) {
       return [
         "p-tabmenuitem",
         item.class,
         {
-          "p-highlight": this.d_activeIndex === index,
+          "p-highlight": this.isActive(item),
           "p-disabled": this.disabled(item),
         },
       ];
@@ -160,29 +248,9 @@ export default {
         ? item.disabled()
         : item.disabled;
     },
-    updateInkBar() {
-      let tabs = this.$refs.nav.children;
-      let inkHighlighted = false;
-      for (let i = 0; i < tabs.length; i++) {
-        let tab = tabs[i];
-        if (DomHandler.hasClass(tab, "p-highlight")) {
-          this.$refs.inkbar.style.width = DomHandler.getWidth(tab) + "px";
-          this.$refs.inkbar.style.left =
-            DomHandler.getOffset(tab).left -
-            DomHandler.getOffset(this.$refs.nav).left +
-            "px";
-          inkHighlighted = true;
-        }
-      }
-
-      if (!inkHighlighted) {
-        this.$refs.inkbar.style.width = "0px";
-        this.$refs.inkbar.style.left = "0px";
-      }
+    isActive(item) {
+      return this.activeItem === item;
     },
-  },
-  directives: {
-    ripple: Ripple,
   },
 };
 </script>

@@ -1,11 +1,11 @@
 <template>
   <div class="p-grid">
     <div class="card p-col-10">
-      <TabMenu
-        :model="tabItems"
+      <DraggableTabMenu
         v-model:activeIndex="activeIndex"
+        :model="tabItems"
         @tab-change="updateCurrentTab"
-      ></TabMenu>
+      ></DraggableTabMenu>
     </div>
     <div class="p-col-2">
       <Button
@@ -19,9 +19,9 @@
   <div class="p-tabview-panels">
     <template v-for="(tab, i) of tabItems" :key="tab.key">
       <div
-        class="p-tabview-panel"
         v-if="lazy ? activeIndex === i : true"
         v-show="lazy ? true : activeIndex === i"
+        class="p-tabview-panel"
       >
         <SubDashboard :tab="tab.key" />
       </div>
@@ -30,19 +30,22 @@
 </template>
 
 <script>
-import TabMenu from "primevue/tabmenu";
+// import TabMenu from "primevue/tabmenu";
 import Button from "primevue/button";
 import axios from "axios";
 import { saveJsonFile } from "@/genericcomponents/utils";
 import SubDashboard from "@/modules/editor/SubDashboard";
+import DraggableTabMenu from "@/modules/editor/actioncomponents/MenuComponents/DraggableTabMenu";
 // import TabPanel from "@/modules/editor/actioncomponents/MenuComponents/TabPanel";
 
 export default {
   name: "MainDashboard",
   components: {
-    TabMenu,
+    DraggableTabMenu,
+    // DraggableTabMenu,
     Button,
     SubDashboard,
+    // TabMenu,
     // TabPanel,
   },
   data() {
@@ -57,8 +60,10 @@ export default {
     this.getTabItems();
   },
   methods: {
-    updateCurrentTab() {
+    updateCurrentTab(event) {
+      console.log(event);
       this.currentTab = this.tabItems[this.activeIndex].key;
+      this.activeIndex = event.index;
       console.log(this.activeIndex, this.currentTab);
     },
     setInitialTabs() {

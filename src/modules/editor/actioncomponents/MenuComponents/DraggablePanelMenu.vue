@@ -2,7 +2,7 @@
   <div class="p-panelmenu p-component" ref="elements">
     <draggable
       :list="model"
-      item-key="key"
+      item-key="key-panel"
       :disabled="false"
       :group="{ name: 'g1' }"
       @start="drag = true"
@@ -284,6 +284,10 @@ export default {
         : item === this.activeItem;
     },
     isDoubleClickedItem(item) {
+      console.log(
+        "The two objects are the same in panel menu",
+        compareObject(item, this.doubleClickedItem)
+      );
       return compareObject(item, this.doubleClickedItem);
     },
     getHeaderClass(item) {
