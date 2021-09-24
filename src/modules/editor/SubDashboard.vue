@@ -6,8 +6,8 @@
 
         <ContextMenu ref="menu" :model="items" />
       </div>
-      <rawDisplayer class="p-col-2" :value="mainItems" title="List" />
-      <div class="p-col-8">
+      <!--      <rawDisplayer class="p-col-2" :value="mainItems" title="List" />-->
+      <div class="p-col-10">
         <Editor editor-id="editorId" />
       </div>
     </div>
@@ -18,7 +18,7 @@
 import PanelMenu from "./actioncomponents/MenuComponents/DraggablePanelMenu.vue";
 import Editor from "@/modules/editor/actioncomponents/EditorComponents/Editor";
 import ContextMenu from "primevue/contextmenu";
-import rawDisplayer from "@/modules/editor/genericcomponents/rawDisplayer";
+// import rawDisplayer from "@/modules/editor/genericcomponents/rawDisplayer";
 import axios from "axios";
 
 export default {
@@ -32,7 +32,7 @@ export default {
     PanelMenu,
     Editor,
     ContextMenu,
-    rawDisplayer,
+    // rawDisplayer,
   },
   mounted() {
     console.log("SubDashboard has been mounted");

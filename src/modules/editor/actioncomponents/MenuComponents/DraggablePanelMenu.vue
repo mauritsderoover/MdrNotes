@@ -157,6 +157,17 @@ export default {
       return UniqueComponentId();
     },
   },
+  watch: {
+    "model.length"() {
+      this.changeLabel = true;
+      this.activeItem = this.model[this.model.length - 2];
+      this.doubleClickedItem = this.activeItem;
+      setTimeout(() => {
+        this.inputElement = this.$refs[`input_${this.activeItem.key}`];
+        this.$refs[`input_${this.activeItem.key}`].focus();
+      }, 0);
+    },
+  },
   methods: {
     abortLabelChange() {
       this.changeLabel = false;
@@ -284,10 +295,6 @@ export default {
         : item === this.activeItem;
     },
     isDoubleClickedItem(item) {
-      console.log(
-        "The two objects are the same in panel menu",
-        compareObject(item, this.doubleClickedItem)
-      );
       return compareObject(item, this.doubleClickedItem);
     },
     getHeaderClass(item) {

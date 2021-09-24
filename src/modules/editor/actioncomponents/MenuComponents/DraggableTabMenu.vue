@@ -1,71 +1,92 @@
 <template>
   <div class="p-tabmenu p-component">
     <div ref="nav" class="p-tabmenu-nav p-reset" role="tablist">
-      <template v-for="(item, index) of model">
-        <div
-          v-if="visible(item)"
-          :class="getItemClass(item, index)"
-          :style="item.style"
-          :key="index"
-        >
-          <div :class="getItemClass(item, index)" :style="item.style">
-            <template v-if="!$slots.item">
-              <router-link
-                v-if="item.to && !disabled(item)"
-                v-slot="{ navigate, href, isActive, isExactActive }"
-                :to="item.to"
-                custom
-              >
+      <draggable
+        :list="model"
+        item-key="key-panel"
+        :disabled="false"
+        :group="{ name: 'g2' }"
+        direction="vertical"
+        class="p-tabmenu-nav"
+        @start="drag = true"
+        @end="drag = false"
+      >
+        <template #item="{ element, index }">
+          <div
+            v-if="visible(element)"
+            :class="getItemClass(element, index)"
+            :style="element.style"
+            :key="index"
+          >
+            <div :class="getItemClass(element, index)" :style="element.style">
+              <template v-if="!$slots.element">
+                <router-link
+                  v-if="element.to && !disabled(element)"
+                  v-slot="{ navigate, href, isActive, isExactActive }"
+                  :to="element.to"
+                  custom
+                >
+                  <a
+                    :href="href"
+                    class="p-menuitem-link"
+                    :class="getRouteItemClass(element, isActive, isExactActive)"
+                    :style="element.style"
+                    @click="catchClickEvent($event, element, index, navigate)"
+                  >
+                    <span
+                      v-if="element.icon"
+                      :class="getItemIcon(element)"
+                    ></span>
+                    <span class="p-menuitem-text">{{ element.label }}</span>
+                  </a>
+                </router-link>
                 <a
-                  :href="href"
+                  v-else
+                  :id="ariaId + '_header'"
+                  :href="element.url"
+                  :class="getItemClass(element, index)"
+                  :tabindex="disabled(element) ? null : '0'"
+                  :aria-expanded="isActive(element)"
+                  :aria-controls="ariaId + '_content'"
                   class="p-menuitem-link"
-                  :class="getRouteItemClass(item, isActive, isExactActive)"
-                  :style="item.style"
-                  @click="catchClickEvent($event, item, index, navigate)"
+                  @click="catchClickEvent($event, element, index)"
                 >
-                  <span v-if="item.icon" :class="getItemIcon(item)"></span>
-                  <span class="p-menuitem-text">{{ item.label }}</span>
-                </a>
-              </router-link>
-              <a
-                v-else
-                :id="ariaId + '_header'"
-                :href="item.url"
-                :class="getItemClass(item, index)"
-                :tabindex="disabled(item) ? null : '0'"
-                :aria-expanded="isActive(element)"
-                :aria-controls="ariaId + '_content'"
-                class="p-menuitem-link"
-                @click="catchClickEvent($event, item, index)"
-              >
-                <span v-if="item.icon" :class="getItemIcon(item)"></span>
-                <span
-                  v-if="!changeLabel || !isDoubleClickedItem(item)"
-                  class="p-menuitem-text"
-                  >{{ item.label }}</span
-                >
-                <form
-                  v-if="changeLabel && isDoubleClickedItem(item)"
-                  class="p-menuitem-text"
-                  :name="item.key"
-                  :ref="'form_' + item.key"
-                >
-                  <input
-                    type="text"
+                  <span
+                    v-if="element.icon"
+                    :class="getItemIcon(element)"
+                  ></span>
+                  <span
+                    v-if="!changeLabel || !isDoubleClickedItem(element)"
                     class="p-menuitem-text"
-                    :id="ariaId + '_input'"
-                    v-model="item.label"
-                    @keydown.enter="abortLabelChange"
-                    :placeholder="item.label"
-                    :ref="'input_' + item.key"
-                  />
-                </form>
-              </a>
-            </template>
-            <component :is="$slots.item" v-else :item="item"></component>
+                    >{{ element.label }}</span
+                  >
+                  <form
+                    v-if="changeLabel && isDoubleClickedItem(element)"
+                    class="p-menuitem-text"
+                    :name="element.key"
+                    :ref="'form_' + element.key"
+                  >
+                    <input
+                      type="text"
+                      class="p-menuitem-text"
+                      :id="ariaId + '_input'"
+                      v-model="element.label"
+                      @keydown.enter="abortLabelChange"
+                      :placeholder="element.label"
+                      :ref="'input_' + element.key"
+                    />
+                  </form>
+                </a>
+              </template>
+              <component
+                :is="$slots.element"
+                v-else
+                :item="element"
+              ></component>
+            </div>
           </div>
-        </div>
-      </template>
+        </template>
+      </draggable>
     </div>
   </div>
 </template>
@@ -120,22 +141,26 @@ export default {
       return UniqueComponentId();
     },
   },
+  watch: {
+    "model.length"() {
+      this.changeLabel = true;
+      this.activeItem = this.model[this.model.length - 2];
+      this.doubleClickedItem = this.activeItem;
+      setTimeout(() => {
+        this.inputElement = this.$refs[`input_${this.activeItem.key}`];
+        this.$refs[`input_${this.activeItem.key}`].focus();
+      }, 0);
+    },
+  },
   methods: {
     abortLabelChange() {
-      console.log("this is called in abortLabelChange");
       this.changeLabel = false;
       this.doubleClickedItem = null;
     },
     onClickOutside(event) {
-      console.log("this is called in onclickoutside");
-      console.log("The event target", event.target);
-      console.log("the change label", this.changeLabel);
-      console.log("this currentTarget", this.currentTarget);
-      console.log("this is input item", this.inputitem);
       if (this.changeLabel) {
         if (this.currentTarget !== event.target) {
           if (this.inputitem !== event.target) {
-            console.log("this is called in onclickoutside");
             this.abortLabelChange();
           }
         }
@@ -155,7 +180,6 @@ export default {
       }
     },
     onItemDoubleClick(event, item, index) {
-      console.log("this is run in item double click");
       if (this.isActive(item) && this.activeItem === null) {
         this.activeItem = item;
       }
@@ -168,11 +192,6 @@ export default {
 
       setTimeout(() => {
         this.inputitem = this.$refs[`input_${item.key}`];
-        console.log("this is refs", this.$refs);
-        console.log(
-          "this is input item in on item double click",
-          this.inputitem
-        );
         this.$refs[`input_${item.key}`].focus();
       }, 0);
     },
@@ -206,13 +225,6 @@ export default {
       });
     },
     isDoubleClickedItem(item) {
-      // console.log("this is in double clicked item to check objects");
-      // console.log("this is item", item);
-      // console.log("this double clicked item", this.doubleClickedItem);
-      console.log(
-        "The two objects are the same",
-        compareObject(item, this.doubleClickedItem)
-      );
       return compareObject(item, this.doubleClickedItem);
     },
     getItemClass(item) {

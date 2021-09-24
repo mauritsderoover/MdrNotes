@@ -1,20 +1,20 @@
 <template>
   <div class="p-grid">
-    <div class="card p-col-10">
+    <div class="card p-col-12">
       <DraggableTabMenu
         v-model:activeIndex="activeIndex"
         :model="tabItems"
         @tab-change="updateCurrentTab"
       ></DraggableTabMenu>
     </div>
-    <div class="p-col-2">
-      <Button
-        label="Save the tabnotes"
-        icon="pi pi-check"
-        class="p-button-sm p-button-help"
-        @click="storeTabItems"
-      />
-    </div>
+    <!--    <div class="p-col-2">-->
+    <!--      <Button-->
+    <!--        label="Save the tabnotes"-->
+    <!--        icon="pi pi-check"-->
+    <!--        class="p-button-sm p-button-help"-->
+    <!--        @click="storeTabItems"-->
+    <!--      />-->
+    <!--    </div>-->
   </div>
   <div class="p-tabview-panels">
     <template v-for="(tab, i) of tabItems" :key="tab.key">
@@ -31,7 +31,7 @@
 
 <script>
 // import TabMenu from "primevue/tabmenu";
-import Button from "primevue/button";
+// import Button from "primevue/button";
 import axios from "axios";
 import { saveJsonFile } from "@/genericcomponents/utils";
 import SubDashboard from "@/modules/editor/SubDashboard";
@@ -43,7 +43,7 @@ export default {
   components: {
     DraggableTabMenu,
     // DraggableTabMenu,
-    Button,
+    // Button,
     SubDashboard,
     // TabMenu,
     // TabPanel,
