@@ -2,7 +2,7 @@
   <div class="p-panelmenu p-component" ref="elements">
     <draggable
       :list="model"
-      item-key="key"
+      item-key="key-panel"
       :disabled="false"
       :group="{ name: 'g1' }"
       @start="drag = true"
@@ -155,6 +155,17 @@ export default {
   computed: {
     ariaId() {
       return UniqueComponentId();
+    },
+  },
+  watch: {
+    "model.length"() {
+      this.changeLabel = true;
+      this.activeItem = this.model[this.model.length - 2];
+      this.doubleClickedItem = this.activeItem;
+      setTimeout(() => {
+        this.inputElement = this.$refs[`input_${this.activeItem.key}`];
+        this.$refs[`input_${this.activeItem.key}`].focus();
+      }, 0);
     },
   },
   methods: {
