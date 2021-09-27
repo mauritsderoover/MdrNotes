@@ -175,11 +175,11 @@ export default {
         }, this.delay);
       } else {
         clearTimeout(this.timer);
-        this.onItemDoubleClick(event, item, index);
+        this.onItemDoubleClick(event, item);
         this.clicks = 0;
       }
     },
-    onItemDoubleClick(event, item, index) {
+    onItemDoubleClick(event, item) {
       if (this.isActive(item) && this.activeItem === null) {
         this.activeItem = item;
       }

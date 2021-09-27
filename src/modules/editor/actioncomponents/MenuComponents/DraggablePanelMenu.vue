@@ -1,5 +1,6 @@
 <template>
   <div class="p-panelmenu p-component" ref="elements">
+    <ContextMenu ref="menu" :model="items" />
     <draggable
       :list="model"
       item-key="key-panel"
@@ -8,7 +9,7 @@
       @start="drag = true"
       @end="drag = false"
     >
-      <template #item="{ element }">
+      <template #item="{ element, index }">
         <div
           v-if="visible(element)"
           :class="getPanelClass(element)"
@@ -28,7 +29,7 @@
                   :class="
                     getHeaderLinkClass(element, { isActive, isExactActive })
                   "
-                  @click="catchClickEvent($event, element, navigate)"
+                  @click="catchClickEvent($event, element, index, navigate)"
                 >
                   <span
                     v-if="element.icon"
@@ -45,7 +46,8 @@
                 :tabindex="disabled(element) ? null : '0'"
                 :aria-expanded="isActive(element)"
                 :aria-controls="ariaId + '_content'"
-                @click="catchClickEvent($event, element)"
+                @click="catchClickEvent($event, element, index)"
+                @contextmenu="onImageRightClick($event, element)"
               >
                 <span
                   v-if="element.items"
@@ -94,6 +96,7 @@
                   :exact="exact"
                   :submenu="true"
                   @update:expandedKeys="updateExpandedKeys"
+                  @tab-change="changeMenuItem"
                 />
               </div>
             </div>
@@ -108,11 +111,13 @@
 import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
 import { compareObject } from "@/genericcomponents/utils";
+import ContextMenu from "primevue/contextmenu";
 
 export default {
   name: "DraggablePanelMenu",
   components: {
     draggable,
+    ContextMenu,
   },
   props: {
     model: {
@@ -131,8 +136,12 @@ export default {
       type: Boolean,
       default: false,
     },
+    activeIndex: {
+      type: Number,
+      default: 0,
+    },
   },
-  emits: ["update:expandedKeys"],
+  emits: ["update:expandedKeys", "update:activeIndex", "tab-change"],
   mounted() {
     document.addEventListener("click", this.onClickOutside);
   },
@@ -143,6 +152,7 @@ export default {
     return {
       activeItem: null,
       doubleClickedItem: null,
+      rightClickedItem: null,
       drag: false,
       delay: 160,
       clicks: 0,
@@ -150,6 +160,23 @@ export default {
       changeLabel: false,
       currentTarget: null,
       inputElement: null,
+      items: [
+        {
+          label: "Add page",
+          icon: "pi pi-fw pi-home",
+        },
+        {
+          label: "Delete page",
+          icon: "pi pi-fw pi-home",
+          command: (event) => {
+            this.deleteItem();
+          },
+        },
+        {
+          label: "Add subpage",
+          icon: "pi pi-fw pi-calendar",
+        },
+      ],
     };
   },
   computed: {
@@ -169,6 +196,9 @@ export default {
     },
   },
   methods: {
+    changeMenuItem(event) {
+      this.$emit("tab-change", event);
+    },
     abortLabelChange() {
       this.changeLabel = false;
       this.doubleClickedItem = null;
@@ -182,11 +212,11 @@ export default {
         }
       }
     },
-    catchClickEvent(event, item, navigate) {
+    catchClickEvent(event, item, index, navigate) {
       this.clicks++;
       if (this.clicks === 1) {
         this.timer = setTimeout(() => {
-          this.onItemClick(event, item, navigate);
+          this.onItemClick(event, item, index, navigate);
           this.clicks = 0;
         }, this.delay);
       } else {
@@ -211,7 +241,7 @@ export default {
         this.$refs[`input_${item.key}`].focus();
       }, 0);
     },
-    onItemClick(event, item, navigate) {
+    onItemClick(event, item, index, navigate) {
       if (this.isActive(item) && this.activeItem === null) {
         this.activeItem = item;
       }
@@ -234,6 +264,12 @@ export default {
       this.updateExpandedKeys({
         item: item,
         expanded: this.activeItem != null,
+      });
+
+      this.changeMenuItem({
+        originalEvent: event,
+        index: index,
+        item: item,
       });
 
       if (item.to && navigate) {
@@ -319,6 +355,25 @@ export default {
       return typeof item.disabled === "function"
         ? item.disabled()
         : item.disabled;
+    },
+    onImageRightClick(event, element) {
+      this.$refs.menu.show(event);
+      this.rightClickedItem = element;
+    },
+    deleteItem() {
+      const index = this.model.indexOf(this.rightClickedItem);
+      if (index > -1) {
+        const modelTemp = this.model;
+        if (modelTemp[index].items) {
+          if (modelTemp[index].items.length > 0) {
+            const subItems = modelTemp[index].items;
+            for (const subItem in subItems) {
+              modelTemp.splice(modelTemp.length - 1, 0, subItems[subItem]);
+            }
+          }
+        }
+        this.$emit("update:model", modelTemp.splice(index, 1));
+      }
     },
   },
 };
