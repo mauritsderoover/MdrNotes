@@ -2,13 +2,28 @@
   <div>
     <div class="p-grid">
       <div class="card p-col-2">
-        <PanelMenu :model="mainItems" @contextmenu="onImageRightClick" />
-
-        <ContextMenu ref="menu" :model="items" />
+        <PanelMenu :model="mainItems" @tab-change="updateMenuItem" />
       </div>
       <!--      <rawDisplayer class="p-col-2" :value="mainItems" title="List" />-->
-      <div class="p-col-10">
-        <Editor editor-id="editorId" />
+      <div class="p-tabview-panels p-col-10">
+        <template v-for="mainItem of mainItems" :key="mainItem.key">
+          <div
+            v-if="lazy ? activeMenuElement === mainItem : true"
+            v-show="lazy ? true : activeMenuElement === mainItem"
+            class="p-tabview-panel"
+          >
+            <Editor :editor-id="mainItem.key" :toolbarRef="toolbarRef" />
+          </div>
+          <template v-for="subItem of mainItem.items" :key="subItem.key">
+            <div
+              v-if="lazy ? activeMenuElement === subItem : true"
+              v-show="lazy ? true : activeMenuElement === subItem"
+              class="p-tabview-panel"
+            >
+              <Editor :editor-id="subItem.key" :toolbarRef="toolbarRef" />
+            </div>
+          </template>
+        </template>
       </div>
     </div>
   </div>
@@ -17,7 +32,7 @@
 <script>
 import PanelMenu from "./actioncomponents/MenuComponents/DraggablePanelMenu.vue";
 import Editor from "@/modules/editor/actioncomponents/EditorComponents/Editor";
-import ContextMenu from "primevue/contextmenu";
+
 // import rawDisplayer from "@/modules/editor/genericcomponents/rawDisplayer";
 import axios from "axios";
 
@@ -27,36 +42,19 @@ export default {
     tab: {
       type: String,
     },
+    toolbarRef: {},
   },
   components: {
     PanelMenu,
     Editor,
-    ContextMenu,
     // rawDisplayer,
   },
   mounted() {
     console.log("SubDashboard has been mounted");
+    console.log(this.toolbarRef);
   },
   data() {
     return {
-      items: [
-        {
-          label: "Add page",
-          icon: "pi pi-fw pi-home",
-          command: (event) => {
-            this.addItem("Untitled");
-            console.log(event);
-          },
-        },
-        {
-          label: "Add subpage",
-          icon: "pi pi-fw pi-calendar",
-          command: (event) => {
-            this.addSubItem("Untitled");
-            console.log(event);
-          },
-        },
-      ],
       mainItems: [
         {
           label: "Add page",
@@ -65,7 +63,6 @@ export default {
           command: (event) => {
             this.currentItem = event.item;
             this.addItem("untitled");
-            console.log(event);
           },
         },
       ],
@@ -73,9 +70,19 @@ export default {
       expandedKeys: {},
       editorId: "main-item-0",
       currentItem: "",
+      activeMenuElement: null,
     };
   },
+  watch: {
+    toolbarRef() {
+      console.log("This is watch in subdashboard", this.toolbarRef);
+    },
+  },
   methods: {
+    updateMenuItem(event) {
+      console.log("this is in updateMenuItem", event);
+      this.activeMenuElement = event.item;
+    },
     loadData() {
       axios
         .get("")
@@ -91,7 +98,6 @@ export default {
               command: (event) => {
                 this.currentItem = event.item;
                 this.addItem("untitled");
-                console.log(event);
               },
             },
           ];
@@ -101,15 +107,12 @@ export default {
       console.log("this is happening \n", this.currentItem, "\n", event);
     },
     addItem(tabTitel) {
-      console.log(this.mainItems);
-      console.log("this is executed");
       this.mainItems.splice(this.mainItems.length - 1, 0, {
         label: tabTitel,
         icon: "pi pi-fw pi-file",
         key: `main-item-${this.mainItems.length}`,
         command: (event) => {
           this.currentItem = event.item;
-          console.log(event);
         },
         items: [
           {
@@ -120,7 +123,6 @@ export default {
             command: (event) => {
               this.currentItem = event.item;
               this.addSubItem("Untitled", event);
-              console.log(event);
             },
             items: [
               {
@@ -144,9 +146,7 @@ export default {
         items: [],
       });
     },
-    onImageRightClick(event) {
-      this.$refs.menu.show(event);
-    },
+
     expandAll() {
       for (const node of this.mainItems) {
         this.expandNode(node);

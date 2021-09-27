@@ -1,5 +1,6 @@
 <template>
   <div class="p-grid">
+    <Toolbar @toolbarRef="setRefToolbar"></Toolbar>
     <div class="card p-col-12">
       <DraggableTabMenu
         v-model:activeIndex="activeIndex"
@@ -23,7 +24,7 @@
         v-show="lazy ? true : activeIndex === i"
         class="p-tabview-panel"
       >
-        <SubDashboard :tab="tab.key" />
+        <SubDashboard :tab="tab.key" :toolbarRef="toolbarRef" />
       </div>
     </template>
   </div>
@@ -33,6 +34,7 @@
 // import TabMenu from "primevue/tabmenu";
 // import Button from "primevue/button";
 import axios from "axios";
+import Toolbar from "@/modules/editor/actioncomponents/EditorComponents/Toolbar";
 import { saveJsonFile } from "@/genericcomponents/utils";
 import SubDashboard from "@/modules/editor/SubDashboard";
 import DraggableTabMenu from "@/modules/editor/actioncomponents/MenuComponents/DraggableTabMenu";
@@ -47,6 +49,7 @@ export default {
     SubDashboard,
     // TabMenu,
     // TabPanel,
+    Toolbar,
   },
   data() {
     return {
@@ -54,17 +57,20 @@ export default {
       currentTab: "",
       activeIndex: 0,
       lazy: false,
+      toolbarRef: null,
     };
   },
   beforeMount() {
     this.getTabItems();
   },
   methods: {
+    setRefToolbar(event) {
+      console.log("this is in set ref toolbar", event);
+      this.toolbarRef = event;
+    },
     updateCurrentTab(event) {
-      console.log(event);
       this.currentTab = this.tabItems[this.activeIndex].key;
       this.activeIndex = event.index;
-      console.log(this.activeIndex, this.currentTab);
     },
     setInitialTabs() {
       this.tabItems = [
