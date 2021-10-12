@@ -91,6 +91,7 @@
                 <DraggablePanelMenu
                   :model="element.items"
                   class="p-panelmenu-root-submenu"
+                  layer="sublayer"
                   :template="$slots.element"
                   :expanded-keys="expandedKeys"
                   :exact="exact"
@@ -140,6 +141,9 @@ export default {
       type: Number,
       default: 0,
     },
+    layer: {
+      type: String,
+    },
   },
   emits: ["update:expandedKeys", "update:activeIndex", "tab-change"],
   mounted() {
@@ -186,13 +190,15 @@ export default {
   },
   watch: {
     "model.length"() {
-      this.changeLabel = true;
-      this.activeItem = this.model[this.model.length - 2];
-      this.doubleClickedItem = this.activeItem;
-      setTimeout(() => {
-        this.inputElement = this.$refs[`input_${this.activeItem.key}`];
-        this.$refs[`input_${this.activeItem.key}`].focus();
-      }, 0);
+      if (this.model.length > 0) {
+        this.changeLabel = true;
+        this.activeItem = this.model[this.model.length - 2];
+        this.doubleClickedItem = this.activeItem;
+        setTimeout(() => {
+          this.inputElement = this.$refs[`input_${this.activeItem.key}`];
+          this.$refs[`input_${this.activeItem.key}`].focus();
+        }, 0);
+      }
     },
   },
   methods: {

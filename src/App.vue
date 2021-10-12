@@ -23,7 +23,7 @@
 <script>
 import HelloWorld from "./modules/HelloWorld.vue";
 // import EditorDashboard from "@/modules/editor/SubDashboard";
-import MainDashboard from "@/modules/editor/MainDashboard";
+import MainDashboard from "@/modules/editor/MainDashboardNew";
 import Button from "primevue/button";
 import Toolbar from "primevue/toolbar";
 

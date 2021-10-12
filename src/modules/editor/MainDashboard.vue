@@ -1,6 +1,5 @@
 <template>
   <div class="p-grid">
-    <Toolbar @toolbarRef="setRefToolbar"></Toolbar>
     <div class="card p-col-12">
       <DraggableTabMenu
         v-model:activeIndex="activeIndex"
@@ -34,7 +33,7 @@
 // import TabMenu from "primevue/tabmenu";
 // import Button from "primevue/button";
 import axios from "axios";
-import Toolbar from "@/modules/editor/actioncomponents/EditorComponents/Toolbar";
+// import Toolbar from "@/modules/editor/actioncomponents/EditorComponents/Toolbar";
 import { saveJsonFile } from "@/genericcomponents/utils";
 import SubDashboard from "@/modules/editor/SubDashboard";
 import DraggableTabMenu from "@/modules/editor/actioncomponents/MenuComponents/DraggableTabMenu";
@@ -49,7 +48,7 @@ export default {
     SubDashboard,
     // TabMenu,
     // TabPanel,
-    Toolbar,
+    // Toolbar,
   },
   data() {
     return {

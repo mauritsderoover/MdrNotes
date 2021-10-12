@@ -1,20 +1,13 @@
 <template>
   <div>
-    <div ref="editor" v-bind="value"></div>
-    <br />
-    <Button label="Save" @click="saveContents" />
+    <div ref="editor" v-bind="value" style="height: 400px"></div>
   </div>
 </template>
 
 <script>
-import Quill from "quill";
-import Button from "primevue/button";
 import { saveJsonFile } from "@/genericcomponents/utils";
 
 export default {
-  components: {
-    Button,
-  },
   props: {
     value: {
       type: String,
@@ -23,7 +16,6 @@ export default {
     identifier: {
       type: String,
     },
-    toolbarRef: {},
   },
   data() {
     return {
@@ -34,11 +26,10 @@ export default {
     console.log(this.$refs.editor);
   },
   mounted() {
-    console.log("this is toolbarref in editor", this.toolbarRef.toolbar);
     this.editor = new Quill(this.$refs.editor, {
       theme: "snow",
       modules: {
-        toolbar: this.toolbarRef.toolbar,
+        toolbar: this.$refs.toolbar1.$refs.toolbar,
         // toolbar: [
         //   ["bold", "italic", "underline", "strike"], // toggled buttons
         //   ["blockquote", "code-block"],
@@ -67,19 +58,7 @@ export default {
     });
   },
   methods: {
-    saveContents() {
-      saveJsonFile(
-        JSON.stringify(this.editor.getContents()),
-        `${this.identifier}.json`
-      );
-    },
-    getNotes() {
-      const axios = require("axios");
-      axios.get("/notes.json").then((response) => {
-        console.log(response);
-        this.editor.setContents(response.data);
-      });
-    },
+
   },
 };
 </script>

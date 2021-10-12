@@ -12,7 +12,11 @@
             v-show="lazy ? true : activeMenuElement === mainItem"
             class="p-tabview-panel"
           >
-            <Editor :editor-id="mainItem.key" :toolbarRef="toolbarRef" />
+            <div
+              :editor-id="mainItem.key"
+              :id="mainItem.key"
+              :ref="mainItem.key"
+            ></div>
           </div>
           <template v-for="subItem of mainItem.items" :key="subItem.key">
             <div
@@ -20,7 +24,11 @@
               v-show="lazy ? true : activeMenuElement === subItem"
               class="p-tabview-panel"
             >
-              <Editor :editor-id="subItem.key" :toolbarRef="toolbarRef" />
+              <div
+                :editor-id="subItem.key"
+                :id="subItem.key"
+                :ref="subItem.key"
+              ></div>
             </div>
           </template>
         </template>
@@ -31,9 +39,6 @@
 
 <script>
 import PanelMenu from "./actioncomponents/MenuComponents/DraggablePanelMenu.vue";
-import Editor from "@/modules/editor/actioncomponents/EditorComponents/Editor";
-
-// import rawDisplayer from "@/modules/editor/genericcomponents/rawDisplayer";
 import axios from "axios";
 
 export default {
@@ -46,7 +51,6 @@ export default {
   },
   components: {
     PanelMenu,
-    Editor,
     // rawDisplayer,
   },
   mounted() {
@@ -106,46 +110,7 @@ export default {
     testing(event) {
       console.log("this is happening \n", this.currentItem, "\n", event);
     },
-    addItem(tabTitel) {
-      this.mainItems.splice(this.mainItems.length - 1, 0, {
-        label: tabTitel,
-        icon: "pi pi-fw pi-file",
-        key: `main-item-${this.mainItems.length}`,
-        command: (event) => {
-          this.currentItem = event.item;
-        },
-        items: [
-          {
-            label: "Add page",
-            parentKey: `main-item-${this.mainItems.length}`,
-            key: `sub-item-0`,
-            icon: "pi pi-fw pi-file",
-            command: (event) => {
-              this.currentItem = event.item;
-              this.addSubItem("Untitled", event);
-            },
-            items: [
-              {
-                label: "another item",
-                items: [],
-              },
-            ],
-          },
-        ],
-      });
-    },
-    addSubItem(tabTitel, event) {
-      const mainitem = this.mainItems.find((mainItem) => {
-        return mainItem.key === event.item.parentKey;
-      });
-      mainitem.items.splice(mainitem.items.length - 1, 0, {
-        label: tabTitel,
-        parentkey: mainitem.key,
-        key: `sub-item-${mainitem.items.length}`,
-        icon: "pi pi-fw pi-file",
-        items: [],
-      });
-    },
+
 
     expandAll() {
       for (const node of this.mainItems) {
