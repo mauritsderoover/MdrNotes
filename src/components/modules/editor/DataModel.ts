@@ -24,6 +24,7 @@ import {
   getContainedResourceUrlAll,
   getThing,
   getThingAll,
+  Iri,
   saveSolidDatasetAt,
   setThing,
   Thing,
@@ -34,34 +35,38 @@ import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import { getData } from "@/components/genericcomponents/utils/utils";
 import { NamedNode, VocabTerm } from "@inrupt/solid-common-vocab";
-import { ZIndexUtils } from "primevue/utils";
-import get = ZIndexUtils.get;
-import { ItemInterface } from "@/components/modules/editor/Editor";
+import { ItemInterface, TabItems } from "@/components/modules/editor/Editor";
+import { XmlSchemaTypeIri } from "@inrupt/solid-client/src/datatypes";
+import { IriString } from "@inrupt/solid-client/src/interfaces";
+import { xmlSchemaTypes } from "@inrupt/solid-client/dist/datatypes";
 
 const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 
-export async function loadData(): Promise<void> {
+export async function loadData(): Promise<
+  [TabItems, Record<IriString, TabItems>]
+> {
   const rootDataSet = await getData(ROOT_URL);
-  console.log("this is rootDataSet", rootDataSet);
   const urls = rootDataSet
     ? getContainedResourceUrlAll(rootDataSet)
     : undefined;
-  console.log("this is urls", urls);
   const dataSet = urls ? await getData(urls[0]) : undefined;
   const thingList = dataSet ? getThingAll(dataSet) : undefined;
   const thing = thingList ? thingList[0] : undefined;
-  console.log("this is thing", thing?.predicates[RDF.type]);
-  console.log("this is dataset", dataSet ? getThingAll(dataSet) : undefined);
-  if (thing) processThing(thing);
+
+  if (thing) return await processThing(thing);
+  throw new Error("No thing was found");
 }
 
-async function processThing(thing: Thing) {
-  if (isNoteBook(thing)) processNoteBook(thing);
+async function processThing(
+  thing: Thing
+): Promise<[TabItems, Record<IriString, TabItems>]> {
+  if (isNoteBook(thing)) return await processNoteBook(thing);
   if (isSectionGroup(thing))
     throw new Error("Section groups are not supported");
-  if (isSection(thing)) processNoteBook(await getNoteBook(thing));
+  if (isSection(thing)) return await processNoteBook(await getNoteBook(thing));
   if (isPageGroup(thing)) throw new Error("This needs to be implemented");
   if (isPage(thing)) throw new Error("This needs to be implemented");
+  throw new Error("No option has been reached");
 }
 
 /**
@@ -69,22 +74,29 @@ async function processThing(thing: Thing) {
  * Currently there is only support for sections.
  * We also only support one notebook currently but this can be increased in the future
  */
-async function processNoteBook(thing: Thing) {
-  console.log("this is thing in process notebook", thing);
+async function processNoteBook(
+  thing: Thing
+): Promise<[TabItems, Record<IriString, TabItems>]> {
   const sectionUrls = getSectionUrls(thing);
+  const panelMenuItems: Record<IriString, TabItems> = {};
+  const tabItems: TabItems = [];
   for (const section of sectionUrls) {
-    await processSection(section);
+    const identifier = retrieveIdentifier(section);
+    panelMenuItems[identifier] = await processSection(section);
+    tabItems.push({
+      key: identifier,
+      uri: new URL(section),
+      label: getTitle(await getThingFromSolidPod(section)),
+    });
   }
+  return [tabItems, panelMenuItems];
 }
 
 async function processPage(url: string): Promise<ItemInterface> {
-  const pageThing = await getThingFromSolidPod(url);
-  const label = getPredicate(pageThing, DCTERMS.title);
-  console.log("this is label in processPage");
   return {
-    label: "",
-    key: "",
-    uri: new URL(pageThing.url),
+    label: getTitle(await getThingFromSolidPod(url)),
+    key: url,
+    uri: new URL(url),
   };
 }
 
@@ -92,12 +104,29 @@ async function processPage(url: string): Promise<ItemInterface> {
  * Sections can contain pages and page groups but currently only pages are supported
  * @param sectionUrl
  */
-async function processSection(sectionUrl: string) {
+async function processSection(sectionUrl: string): Promise<TabItems> {
   const sectionThing = await getThingFromSolidPod(sectionUrl);
-  const pageUrls = getPageUrls(sectionThing);
-  pageUrls.forEach((page) => {
-    processPage(page)
-  });
+  const section: TabItems = [];
+  if (hasPages(sectionThing)) {
+    const pageUrls = getPageUrls(sectionThing);
+    for (const page of pageUrls) {
+      section.push(await processPage(page));
+    }
+    return section;
+  } else {
+    const pageIdentifier = await createPage("SomeRandomPage");
+    await linkPage(
+      hasPage.SECTION,
+      pageIdentifier,
+      retrieveIdentifier(sectionUrl)
+    );
+    section.push({
+      key: pageIdentifier,
+      uri: new URL(ROOT_URL + pageIdentifier),
+      label: "SomeRandomPage",
+    });
+    return section;
+  }
 }
 
 function getPageUrls(thing: ThingPersisted): string[] {
@@ -183,17 +212,52 @@ function getThingType(thing: Thing): string | readonly string[] | undefined {
 
 function getTitle(thing: ThingPersisted): string {
   const titlePredicates = getPredicate(thing, DCTERMS.title);
-  console.log("this is titlePredicates in getTitle", titlePredicates);
-  return "this is intermediate title";
+  if (Array.isArray(titlePredicates) && titlePredicates.length > 0)
+    return titlePredicates[0];
+  if (typeof titlePredicates === "string") return titlePredicates;
+  throw new Error("Impossible option has been reached");
+}
+
+function hasPages(thing: ThingPersisted): boolean {
+  return !!getPredicate(thing, NOTETAKING.hasPage);
 }
 
 function getPredicate(
   thing: Thing,
-  predicate: string
+  predicateIri: string
 ): string | readonly string[] | undefined {
   if (thing.predicates) {
-    return thing.predicates[predicate].namedNodes;
+    const predicate = thing.predicates[predicateIri];
+    if (predicate) {
+      if (predicate.blankNodes)
+        throw new Error("Blank node support has not been implemented");
+      if (predicate.namedNodes) return predicate.namedNodes;
+      if (predicate.langStrings)
+        throw new Error("Language strings have not yet been implemented");
+      if (predicate.literals) return processLiterals(predicate.literals);
+    }
   }
+}
+
+type DataTypeIriString = XmlSchemaTypeIri | IriString;
+
+function processLiterals(
+  literals: Readonly<Record<DataTypeIriString, readonly string[]>>
+): readonly string[] | undefined {
+  return literals[xmlSchemaTypes.string]
+    ? literals[xmlSchemaTypes.string]
+    : undefined;
+}
+
+/**
+ * The identifier is the last part of a resource URL
+ *
+ * @param iri
+ */
+function retrieveIdentifier(iri: IriString): string {
+  const lastElement = iri.split("/").at(-1);
+  if (lastElement) return lastElement;
+  throw new Error("No last element found");
 }
 
 /**
@@ -210,7 +274,6 @@ function getPredicate(
 //   }
 // }
 export async function newNoteBook(title: string): Promise<void> {
-  console.log("this newNoteBook function has been reached");
   let notebookID: string | Promise<string> = createNoteBook(title);
   let sectionID: string | Promise<string> = createSection("untitled");
   let sectionID2: string | Promise<string> = createSection("another Section");
@@ -221,9 +284,9 @@ export async function newNoteBook(title: string): Promise<void> {
     sectionID2,
     sectionID3,
   ]);
-  const pageID = await createNote("TesterNote");
-  const pageID2 = await createNote("TesterNote2");
-  const pageID3 = await createNote("TesterNote3");
+  const pageID = await createPage("TesterNote");
+  const pageID2 = await createPage("TesterNote2");
+  const pageID3 = await createPage("TesterNote3");
   // await linkSection(hasSection.NOTEBOOK, sectionID, notebookID);
   // await linkSection(hasSection.NOTEBOOK, sectionID2, notebookID);
   // await linkSection(hasSection.NOTEBOOK, sectionID3, notebookID);
@@ -253,7 +316,6 @@ async function linkPage(
   pageIdentifier: string,
   targetIdentifier: string
 ) {
-  console.log("this linkPage function has been reached");
   const pageURL = `https://mauritsderoover.solidcommunity.net/notes/${pageIdentifier}`;
   const targetURL = `https://mauritsderoover.solidcommunity.net/notes/${targetIdentifier}`;
   const dataset = await getData(pageURL);
@@ -313,7 +375,6 @@ async function linkSection(
   sectionIdentifier: string,
   targetIdentifier: string
 ) {
-  console.log("this linkSection function has been reached");
   const sectionURL = `https://mauritsderoover.solidcommunity.net/notes/${sectionIdentifier}`;
   const targetURL = `https://mauritsderoover.solidcommunity.net/notes/${targetIdentifier}`;
   const sectionDataset = await getData(sectionURL);
@@ -380,8 +441,7 @@ async function createPageGroup(title: string): Promise<string> {
   return await createNoteTakingElement(title, NOTETAKING.PageGroup);
 }
 
-async function createNote(title: string): Promise<string> {
-  console.log("this is in createNote");
+async function createPage(title: string): Promise<string> {
   return await createNoteTakingElement(title, NOTETAKING.Note);
 }
 
