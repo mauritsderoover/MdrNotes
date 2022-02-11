@@ -101,6 +101,7 @@ export interface PanelMenuItemInterface extends ItemInterface {
 export interface BaseItemParameters {
   label: string;
   url: string;
+  key?: string;
 }
 
 export class PanelItem implements PanelMenuItemInterface {
@@ -110,7 +111,7 @@ export class PanelItem implements PanelMenuItemInterface {
   items: Array<ItemInterface>;
   icon?: string;
   constructor(input: BaseItemParameters) {
-    this.key = input.url;
+    this.key = input.key ? input.key : input.url;
     this.uri = new URL(input.url);
     this.label = input.label;
     this.icon = "pi pi-fw pi-file";
@@ -125,7 +126,7 @@ export class Item implements ItemInterface {
   items: Array<ItemInterface>;
   icon?: string;
   constructor(input: BaseItemParameters) {
-    this.key = input.url;
+    this.key = input.key ? input.key : input.url;
     this.uri = new URL(input.url);
     this.label = input.label;
     this.icon = "pi pi-fw pi-file";
@@ -199,4 +200,5 @@ export interface MainDashBoardInterface {
   currentEditor: string;
   editor: Quill | undefined;
   activeMenuElement: ItemInterface | undefined;
+  notebook: string | undefined;
 }

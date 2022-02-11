@@ -34,8 +34,14 @@ import { DCTERMS, RDF } from "@inrupt/vocab-common-rdf";
 import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import { getData } from "@/components/genericcomponents/utils/utils";
-import { NamedNode, VocabTerm } from "@inrupt/solid-common-vocab";
-import { ItemInterface, TabItems } from "@/components/modules/editor/Editor";
+import { VocabTerm } from "@inrupt/solid-common-vocab";
+import {
+  Item,
+  ItemInterface,
+  PanelItem,
+  PanelMenuItems,
+  TabItems,
+} from "@/components/modules/editor/Editor";
 import { XmlSchemaTypeIri } from "@inrupt/solid-client/src/datatypes";
 import { IriString } from "@inrupt/solid-client/src/interfaces";
 import { xmlSchemaTypes } from "@inrupt/solid-client/dist/datatypes";
@@ -43,7 +49,7 @@ import { xmlSchemaTypes } from "@inrupt/solid-client/dist/datatypes";
 const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 
 export async function loadData(): Promise<
-  [TabItems, Record<IriString, TabItems>]
+  [string, TabItems, Record<IriString, TabItems>]
 > {
   const rootDataSet = await getData(ROOT_URL);
   const urls = rootDataSet
@@ -59,13 +65,13 @@ export async function loadData(): Promise<
 
 async function processThing(
   thing: Thing
-): Promise<[TabItems, Record<IriString, TabItems>]> {
+): Promise<[string, TabItems, Record<IriString, TabItems>]> {
   if (isNoteBook(thing)) return await processNoteBook(thing);
   if (isSectionGroup(thing))
     throw new Error("Section groups are not supported");
-  if (isSection(thing)) return await processNoteBook(await getNoteBook(thing));
+  if (isSection(thing) || isPage(thing))
+    return await processNoteBook(await getNoteBook(thing));
   if (isPageGroup(thing)) throw new Error("This needs to be implemented");
-  if (isPage(thing)) throw new Error("This needs to be implemented");
   throw new Error("No option has been reached");
 }
 
@@ -76,7 +82,7 @@ async function processThing(
  */
 async function processNoteBook(
   thing: Thing
-): Promise<[TabItems, Record<IriString, TabItems>]> {
+): Promise<[string, TabItems, Record<IriString, TabItems>]> {
   const sectionUrls = getSectionUrls(thing);
   const panelMenuItems: Record<IriString, TabItems> = {};
   const tabItems: TabItems = [];
@@ -89,7 +95,7 @@ async function processNoteBook(
       label: getTitle(await getThingFromSolidPod(section)),
     });
   }
-  return [tabItems, panelMenuItems];
+  return [retrieveIdentifier(thing.url), tabItems, panelMenuItems];
 }
 
 async function processPage(url: string): Promise<ItemInterface> {
@@ -154,10 +160,31 @@ function getSectionUrls(thing: ThingPersisted): string[] {
 }
 
 async function getNoteBook(thing: Thing): Promise<Thing> {
-  const noteBookUrl = getNoteBookUrl(thing);
+  let internalThing = thing;
+  if (isPage(thing)) internalThing = await getSection(thing);
+  const noteBookUrl = getNoteBookUrl(internalThing);
   const noteBookDataSet = await getData(noteBookUrl);
   if (noteBookDataSet) return getThing(noteBookDataSet, noteBookUrl) as Thing;
   throw new Error("noteBookDataSet does not exist");
+}
+
+async function getSection(thing: Thing): Promise<Thing> {
+  const sectionUrl = getSectionUrl(thing);
+  const sectionDataSet = await getData(sectionUrl);
+  if (sectionDataSet) return getThing(sectionDataSet, sectionUrl) as Thing;
+  throw new Error("noteBookDataSet does not exist");
+}
+
+function getSectionUrl(thing: Thing): string {
+  const section = getPredicate(
+    thing,
+    (NOTETAKING.partOfSection as VocabTerm).iri.value
+  );
+  if (section) {
+    if (Array.isArray(section) && section.length === 1) return section[0];
+    if (typeof section === "string") return section;
+  }
+  throw new Error("A partOfSection does not exist");
 }
 
 function processSectionGroup() {
@@ -273,6 +300,51 @@ function retrieveIdentifier(iri: IriString): string {
 //
 //   }
 // }
+export async function newSection(
+  noteBookIdentifier: string
+): Promise<[ItemInterface, PanelMenuItems]> {
+  let sectionIdentifer: string | Promise<string> = createSection("New Section");
+  let pageIdentifier: string | Promise<string> = createPage("New Page");
+  [sectionIdentifer, pageIdentifier] = await Promise.all([
+    sectionIdentifer,
+    pageIdentifier,
+  ]);
+  await Promise.all([
+    linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifer),
+    linkSection(hasSection.NOTEBOOK, sectionIdentifer, noteBookIdentifier),
+  ]);
+
+  const newTabItem: ItemInterface = new Item({
+    label: "New Section",
+    url: ROOT_URL + sectionIdentifer,
+    key: sectionIdentifer,
+  });
+
+  const newPanelMenu: PanelMenuItems = {
+    sectionIdentifier: [
+      new PanelItem({
+        label: "New Page",
+        url: ROOT_URL + pageIdentifier,
+        key: pageIdentifier,
+      }),
+    ],
+  };
+
+  return [newTabItem, newPanelMenu];
+}
+
+export async function newPage(
+  sectionIdentifier: string
+): Promise<ItemInterface> {
+  const pageIdentifier = await createPage("New Page");
+  await linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier);
+  return new PanelItem({
+    label: "New Page",
+    url: ROOT_URL + pageIdentifier,
+    key: pageIdentifier,
+  });
+}
+
 export async function newNoteBook(title: string): Promise<void> {
   let notebookID: string | Promise<string> = createNoteBook(title);
   let sectionID: string | Promise<string> = createSection("untitled");

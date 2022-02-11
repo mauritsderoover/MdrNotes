@@ -103,7 +103,12 @@ import {
 } from "@/components/modules/editor/Editor";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import { DCTERMS, RDF, SCHEMA_INRUPT } from "@inrupt/vocab-common-rdf";
-import { loadData, newNoteBook } from "@/components/modules/editor/DataModel";
+import {
+  loadData,
+  newNoteBook,
+  newPage,
+  newSection,
+} from "@/components/modules/editor/DataModel";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
 export default defineComponent({
@@ -291,7 +296,16 @@ export default defineComponent({
       }
     },
     addTab() {
+      if (this.notebook)
+        newSection(this.notebook).then((value) => {
+          const newTabItem = value[0];
+          const newPanelMenu = value[1];
 
+          this.tabItems.push(newTabItem);
+          this.currentTab = newTabItem.key;
+
+          this.panelMenuItems = { ...this.panelMenuItems, ...newPanelMenu };
+        });
     },
     addTabOld() {
       // In order to add a tab we need a the url storage container
@@ -335,7 +349,14 @@ export default defineComponent({
       this.addMenuElement();
     },
 
-    addMenuElement() {
+    async addMenuElement(): Promise<void> {
+      if (!this.panelMenuItems[this.currentTab]) {
+        throw new Error("The key for the panelitems does not exist yet");
+      }
+      this.panelMenuItems[this.currentTab].push(await newPage(this.currentTab));
+    },
+
+    addMenuElementOld() {
       if (!this.panelMenuItems[this.currentTab]) {
         throw new Error("The key for the panelitems does not exist yet");
       }
