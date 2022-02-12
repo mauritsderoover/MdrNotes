@@ -307,48 +307,6 @@ export default defineComponent({
           this.panelMenuItems = { ...this.panelMenuItems, ...newPanelMenu };
         });
     },
-    addTabOld() {
-      // In order to add a tab we need a the url storage container
-      // we need a label
-      // we need a check if the label is unique
-      // we need to add it to the object locally
-      // we need to add it to the solid pod (we do need to wait for this happen)
-      // Th default value of a new tab is "untitled", if it already exist then a number is added
-      let defaultLabel = "untitled";
-      const foundItems = this.tabItems.filter((value) =>
-        value.label.includes(defaultLabel)
-      );
-      if (foundItems.length > 0) {
-        const lastItem = foundItems[foundItems.length - 1];
-        if (lastItem.label.includes("-")) {
-          const labelParts = lastItem.label.split("-");
-          const number = Number(labelParts[1]) + 1;
-          defaultLabel = defaultLabel + "-" + number;
-        } else {
-          defaultLabel = defaultLabel + "-0";
-        }
-      }
-
-      // we create the new tab item
-      const newItem: ItemInterface = new Item({
-        label: defaultLabel,
-        url: this.createTabUrl(defaultLabel).toString(),
-      });
-      this.tabItems.push(newItem);
-
-      this.currentTab = newItem.key;
-
-      // we create the panelMenuItem object that belongs to the tab
-      if (!this.panelMenuItems[this.currentTab]) {
-        this.panelMenuItems[this.currentTab] = [];
-      } else {
-        throw new Error("There is already a tab with the same name");
-      }
-
-      // we create the corresponding menu element
-      this.addMenuElement();
-    },
-
     async addMenuElement(): Promise<void> {
       if (!this.panelMenuItems[this.currentTab]) {
         throw new Error("The key for the panelitems does not exist yet");
@@ -356,45 +314,8 @@ export default defineComponent({
       this.panelMenuItems[this.currentTab].push(await newPage(this.currentTab));
     },
 
-    addMenuElementOld() {
-      if (!this.panelMenuItems[this.currentTab]) {
-        throw new Error("The key for the panelitems does not exist yet");
-      }
-      let defaultLabel = "untitled";
-      const foundItems = this.panelMenuItems[this.currentTab].filter((value) =>
-        value.label.includes(defaultLabel)
-      );
-      if (foundItems.length > 0) {
-        const lastItem = foundItems[foundItems.length - 1];
-        if (lastItem.label.includes("-")) {
-          const labelParts = lastItem.label.split("-");
-          const number = Number(labelParts[1]) + 1;
-          defaultLabel = defaultLabel + "-" + number;
-        } else {
-          defaultLabel = defaultLabel + "-0";
-        }
-      }
-
-      const newPanelItem: ItemInterface = new PanelItem({
-        label: defaultLabel,
-        url: this.createMenuElementUrl(defaultLabel).toString(),
-      });
-      this.panelMenuItems[this.currentTab].push(newPanelItem);
-      this.currentMenuPanelItem = newPanelItem.key;
-    },
     createTabUrl(name: string): URL {
       return new URL(`${this.$store.getters.getOrigin}/notes/${name}`);
-    },
-    createMenuElementUrl(name: string): URL {
-      const currentTab = this.tabItems.find(
-        (value) => value.key === this.currentTab
-      );
-      if (!currentTab) {
-        throw new Error("The curren tab cannot be found");
-      }
-      return new URL(
-        `${this.$store.getters.getOrigin}/notes/${currentTab.label}/${name}`
-      );
     },
     updateMenuItem(event: { item: ItemInterface }) {
       this.activeMenuElement = event.item;
