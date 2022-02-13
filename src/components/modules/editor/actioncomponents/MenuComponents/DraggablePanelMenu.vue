@@ -126,8 +126,8 @@ import ContextMenu from "primevue/contextmenu";
 import { RouterLinkProps, RouterViewProps } from "vue-router";
 import {
   DraggablePanelMenu,
-  ItemInterface,
-} from "@/components/modules/editor/Editor";
+  BaseItem,
+} from "@/components/modules/editor/editor-interfaces";
 
 export default defineComponent({
   name: "DraggablePanelMenu",
@@ -137,8 +137,12 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Array as PropType<Array<ItemInterface>>,
+      type: Array as PropType<Array<BaseItem>>,
       default: null,
+    },
+    sectionIdentifier: {
+      type: String,
+      required: true,
     },
     expandedKeys: {
       type: null,
@@ -170,6 +174,7 @@ export default defineComponent({
   ],
   data(): DraggablePanelMenu {
     return {
+      oldSection: undefined,
       activeItem: undefined,
       doubleClickActiveIndex: undefined,
       doubleClickedItem: undefined,
@@ -204,28 +209,32 @@ export default defineComponent({
   },
   watch: {
     "model.length"() {
-      this.changeLabel = false; // is this necessary?
-      this.activeItem = undefined; // is this necessary?
-      this.doubleClickedItem = undefined; // is this necessary?
-      if (this.model.length > 1) {
-        this.changeLabel = true;
-        this.activeItem = this.model[this.model.length - 1];
-        this.doubleClickedItem = this.activeItem;
-        setTimeout(() => {
-          if (this.activeItem) {
-            console.log("this is all in model.length");
-            console.log("this is activeItem", this.activeItem);
-            const input_identifier = encodeURI(`input_${this.activeItem.key}`);
-            console.log("this is input_identifier", input_identifier);
-            console.log("this is refs", this.$refs);
-            this.inputElement = this.$refs[
-              input_identifier
-            ] as HTMLInputElement;
-            console.log("this is inputElement", this.inputElement);
-            // (this.$refs[input_identifier] as HTMLDivElement).focus();
-          }
-        }, 0);
-      }
+      if (this.oldSection && this.oldSection === this.sectionIdentifier) {
+        this.changeLabel = false; // is this necessary?
+        this.activeItem = undefined; // is this necessary?
+        this.doubleClickedItem = undefined; // is this necessary?
+        if (this.model.length > 1) {
+          this.changeLabel = true;
+          this.activeItem = this.model[this.model.length - 1];
+          this.doubleClickedItem = this.activeItem;
+          setTimeout(() => {
+            if (this.activeItem) {
+              console.log("this is all in model.length");
+              console.log("this is activeItem", this.activeItem);
+              const input_identifier = encodeURI(
+                `input_${this.activeItem.key}`
+              );
+              console.log("this is input_identifier", input_identifier);
+              console.log("this is refs", this.$refs);
+              this.inputElement = this.$refs[
+                input_identifier
+              ] as HTMLInputElement;
+              console.log("this is inputElement", this.inputElement);
+              // (this.$refs[input_identifier] as HTMLDivElement).focus();
+            }
+          }, 0);
+        }
+      } else this.oldSection = this.sectionIdentifier;
     },
   },
   mounted() {
@@ -244,6 +253,7 @@ export default defineComponent({
       this.doubleClickActiveIndex = undefined;
       this.changeLabel = false;
       this.doubleClickedItem = undefined;
+      this.inputElement = undefined;
     },
     onClickOutside(event: any) {
       if (this.changeLabel) {

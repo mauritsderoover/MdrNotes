@@ -37,6 +37,7 @@
         <div class="p-col-2">
           <DraggablePanelMenu
             :model="panelMenuItems[currentTab]"
+            :section-identifier="currentTab"
             layer="mainItem"
             @tab-change="updateMenuItem"
             @add-menu-element="addMenuElement"
