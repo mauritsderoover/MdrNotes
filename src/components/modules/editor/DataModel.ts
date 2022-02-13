@@ -65,6 +65,28 @@ export async function loadData(): Promise<
   throw new Error("No thing was found");
 }
 
+export async function savePageContent(
+  pageIdentifier: string,
+  content: string
+): Promise<void> {
+  let URL = ROOT_URL;
+  if (pageIdentifier.includes("http"))
+    URL = URL + retrieveIdentifier(pageIdentifier);
+  else URL = URL + pageIdentifier;
+  console.log("this is URL", URL);
+  console.log("this is the pageIdentifier", pageIdentifier);
+  const dataSet = await getData(URL);
+  if (dataSet) {
+    let thing = getThing(dataSet, URL);
+    if (!thing) throw new Error("No thing could be retrieved");
+    if (!isPage(thing)) throw new Error("The thing is no page Thing");
+    thing = buildThing(thing).setStringNoLocale(SCHEMA.Text, content).build();
+    await saveSolidDatasetAt(URL, setThing(dataSet, thing), {
+      fetch,
+    });
+  }
+}
+
 async function processThing(
   thing: Thing
 ): Promise<[string, TabItems, Record<IriString, TabItems>]> {
@@ -108,6 +130,16 @@ async function processPage(url: string): Promise<PageItem> {
     url: url,
     editor: getEditorContent(getPageText(thing)),
   });
+}
+
+function getEditorContent(content: string): { ops: DeltaOperation[] } {
+  try {
+    console.log("this is content", content);
+    console.log("this is JSON Parsed", JSON.parse(content));
+    return JSON.parse(content);
+  } catch {
+    return { ops: [] };
+  }
 }
 
 /**
@@ -242,6 +274,19 @@ function getNoteBookUrl(thing: Thing): string {
 
 function getThingType(thing: Thing): string | readonly string[] | undefined {
   return getPredicate(thing, RDF.type);
+}
+
+function getPageText(thing: ThingPersisted): string {
+  console.log("this is thing", thing);
+  const titlePredicates = getPredicate(thing, SCHEMA.Text);
+  if (titlePredicates) {
+    if (Array.isArray(titlePredicates) && titlePredicates.length > 0)
+      return titlePredicates[0];
+    console.log("this is titlePredicates", titlePredicates);
+    if (typeof titlePredicates === "string") return titlePredicates;
+    throw new Error("Impossible option has been reached");
+  }
+  return "{}";
 }
 
 function getTitle(thing: ThingPersisted): string {
