@@ -36,15 +36,17 @@ import { fetch } from "@inrupt/solid-client-authn-browser";
 import { getData } from "@/components/genericcomponents/utils/utils";
 import { VocabTerm } from "@inrupt/solid-common-vocab";
 import {
-  Item,
-  ItemInterface,
-  PanelItem,
+  BaseItem,
+  PanelMenuItem,
   PanelMenuItems,
   TabItems,
-} from "@/components/modules/editor/Editor";
+} from "@/components/modules/editor/editor-interfaces";
 import { XmlSchemaTypeIri } from "@inrupt/solid-client/src/datatypes";
 import { IriString } from "@inrupt/solid-client/src/interfaces";
 import { xmlSchemaTypes } from "@inrupt/solid-client/dist/datatypes";
+import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
+import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
+import { Delta, DeltaOperation } from "quill";
 
 const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 
@@ -98,12 +100,14 @@ async function processNoteBook(
   return [retrieveIdentifier(thing.url), tabItems, panelMenuItems];
 }
 
-async function processPage(url: string): Promise<ItemInterface> {
-  return {
-    label: getTitle(await getThingFromSolidPod(url)),
-    key: url,
-    uri: new URL(url),
-  };
+async function processPage(url: string): Promise<PageItem> {
+  const thing = await getThingFromSolidPod(url);
+  return new PageItem({
+    label: getTitle(thing),
+    key: retrieveIdentifier(url),
+    url: url,
+    editor: getEditorContent(getPageText(thing)),
+  });
 }
 
 /**
@@ -112,7 +116,7 @@ async function processPage(url: string): Promise<ItemInterface> {
  */
 async function processSection(sectionUrl: string): Promise<TabItems> {
   const sectionThing = await getThingFromSolidPod(sectionUrl);
-  const section: TabItems = [];
+  const section: Array<PanelMenuItem> = [];
   if (hasPages(sectionThing)) {
     const pageUrls = getPageUrls(sectionThing);
     for (const page of pageUrls) {
@@ -126,11 +130,14 @@ async function processSection(sectionUrl: string): Promise<TabItems> {
       pageIdentifier,
       retrieveIdentifier(sectionUrl)
     );
-    section.push({
-      key: pageIdentifier,
-      uri: new URL(ROOT_URL + pageIdentifier),
-      label: "SomeRandomPage",
-    });
+    section.push(
+      new PageItem({
+        key: pageIdentifier,
+        url: `${ROOT_URL} + ${pageIdentifier}`,
+        label: "SomeRandomPage",
+        editor: new Delta(),
+      })
+    );
     return section;
   }
 }
@@ -215,7 +222,7 @@ function isNoteBook(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.NoteBook);
 }
 
-function ThingOfType(thing: Thing, vocabTerm: VocabTerm): boolean {
+function ThingOfType(thing: ThingPersisted, vocabTerm: VocabTerm): boolean {
   const ThingType = getThingType(thing);
   if (Array.isArray(ThingType)) return ThingType.includes(vocabTerm.iri.value);
   return ThingType === vocabTerm.iri.value;
@@ -302,7 +309,7 @@ function retrieveIdentifier(iri: IriString): string {
 // }
 export async function newSection(
   noteBookIdentifier: string
-): Promise<[ItemInterface, PanelMenuItems]> {
+): Promise<[BaseItem, PanelMenuItems]> {
   let sectionIdentifer: string | Promise<string> = createSection("New Section");
   let pageIdentifier: string | Promise<string> = createPage("New Page");
   [sectionIdentifer, pageIdentifier] = await Promise.all([
@@ -314,7 +321,7 @@ export async function newSection(
     linkSection(hasSection.NOTEBOOK, sectionIdentifer, noteBookIdentifier),
   ]);
 
-  const newTabItem: ItemInterface = new Item({
+  const newTabItem: BaseItem = new TabItem({
     label: "New Section",
     url: ROOT_URL + sectionIdentifer,
     key: sectionIdentifer,
@@ -322,10 +329,11 @@ export async function newSection(
 
   const newPanelMenu: PanelMenuItems = {
     sectionIdentifier: [
-      new PanelItem({
+      new PageItem({
         label: "New Page",
         url: ROOT_URL + pageIdentifier,
         key: pageIdentifier,
+        editor: new Delta(),
       }),
     ],
   };
@@ -333,15 +341,14 @@ export async function newSection(
   return [newTabItem, newPanelMenu];
 }
 
-export async function newPage(
-  sectionIdentifier: string
-): Promise<ItemInterface> {
+export async function newPage(sectionIdentifier: string): Promise<BaseItem> {
   const pageIdentifier = await createPage("New Page");
   await linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier);
-  return new PanelItem({
+  return new PageItem({
     label: "New Page",
     url: ROOT_URL + pageIdentifier,
     key: pageIdentifier,
+    editor: new Delta(),
   });
 }
 
@@ -514,7 +521,9 @@ async function createPageGroup(title: string): Promise<string> {
 }
 
 async function createPage(title: string): Promise<string> {
-  return await createNoteTakingElement(title, NOTETAKING.Note);
+  const identifier = await createNoteTakingElement(title, NOTETAKING.Note);
+  savePageContent(identifier, "").then();
+  return identifier;
 }
 
 async function createNoteTakingElement(
