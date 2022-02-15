@@ -8,7 +8,7 @@
         @click="createNotebook"
       />
       <Button
-        label="loadData"
+        label="saveSomeContent"
         icon="pi pi-check"
         class="p-button-help"
         @click="loadDataTester"
@@ -37,6 +37,7 @@
         <div class="p-col-2">
           <DraggablePanelMenu
             :model="panelMenuItems[currentTab]"
+            :section-identifier="currentTab"
             layer="mainItem"
             @tab-change="updateMenuItem"
             @add-menu-element="addMenuElement"
@@ -45,7 +46,7 @@
         <div class="p-col-10">
           <div
             ref="editor"
-            :="editors[currentEditor]"
+            v-bind="editors[currentEditor]"
             style="height: 400px"
           ></div>
         </div>
@@ -59,13 +60,9 @@ import { defineComponent } from "vue";
 import Button from "primevue/button";
 import {
   containerExists,
-  getData,
-  getContainerName,
   // deleteContainerContents,
-  saveJsonFile,
   // createContainerAtUri,
   deleteContainerContents,
-  createContainerAtUri,
 } from "@/components/genericcomponents/utils/utils";
 import DraggableTabMenu from "../../modules/editor/actioncomponents/MenuComponents/DraggableTabMenu.vue";
 import Toolbar from "../../modules/editor/actioncomponents/EditorComponents/Toolbar.vue";
@@ -77,38 +74,23 @@ import {
   createSolidDataset,
   setThing,
   saveSolidDatasetAt,
-  getContainedResourceUrlAll,
-  // isThing,
-  getThingAll,
-  ThingLocal,
-  ThingPersisted,
-  deleteSolidDataset,
-  addUrl,
-  getThing,
-  addDecimal,
-  removeThing,
-  addStringNoLocale,
-  getSolidDataset,
-  setStringNoLocale,
-  // createContainerAt,
 } from "@inrupt/solid-client";
-import { rdf, solid } from "@inrupt/solid-client/dist/constants";
 import SCHEMA from "../../genericcomponents/vocabs/SCHEMA";
 import NOTETAKING from "../../genericcomponents/vocabs/NOTETAKING";
 import {
-  Item,
-  ItemInterface,
+  BaseItem,
   MainDashBoardInterface,
-  PanelItem,
-} from "@/components/modules/editor/Editor";
+} from "@/components/modules/editor/editor-interfaces";
 import { fetch } from "@inrupt/solid-client-authn-browser";
-import { DCTERMS, RDF, SCHEMA_INRUPT } from "@inrupt/vocab-common-rdf";
+import { DCTERMS, RDF } from "@inrupt/vocab-common-rdf";
 import {
   loadData,
   newNoteBook,
   newPage,
   newSection,
+  savePageContent,
 } from "@/components/modules/editor/DataModel";
+import { PageItem } from "@/components/modules/editor/editor-classes";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
 export default defineComponent({
@@ -149,14 +131,27 @@ export default defineComponent({
       modules: {
         toolbar: (this.$refs.toolbar as any).$refs.toolbar,
       },
-    });
+    }) as Quill;
 
     this.editor.root.innerHTML = this.editors[
       this.currentEditor
     ] as unknown as string;
     this.editor.on("text-change", () => {
       if (this.editor) {
+        // console.log("this is editor", this.editor);
+        console.log("this is activeMenuElement", this.activeMenuElement);
+        if (this.activeMenuElement) {
+          this.activeMenuElement.editor = this.editor.getContents();
+          console.log(
+            "this is currentMenuPanelItem",
+            this.currentMenuPanelItem
+          );
+        }
         this.editors[this.currentEditor] = this.editor.getContents();
+        savePageContent(
+          this.currentMenuPanelItem,
+          JSON.stringify(this.editor.getContents())
+        );
       }
     });
   },
@@ -190,37 +185,13 @@ export default defineComponent({
       solidDataSet = setThing(solidDataSet, newThing);
       saveSolidDatasetAt(uri, solidDataSet, { fetch });
     },
-    async solidCreationExample() {
-      let courseSolidDataset = createSolidDataset();
-
-      const newBookThing1 = buildThing(createThing({ name: "book1" }))
-        .addStringNoLocale(SCHEMA_INRUPT.name, "ABC123 of Example Literature")
-        .addUrl(RDF.type, "https://schema.org/Book")
-        .build();
-
-      let newBookThing2 = createThing({ name: "book2" });
-      newBookThing2 = addStringNoLocale(
-        newBookThing2,
-        SCHEMA_INRUPT.name,
-        "ZYX987 of Example Poetry"
-      );
-      newBookThing2 = addUrl(
-        newBookThing2,
-        RDF.type,
-        "https://schema.org/Book"
-      );
-
-      courseSolidDataset = setThing(courseSolidDataset, newBookThing1);
-      courseSolidDataset = setThing(courseSolidDataset, newBookThing2);
-
-      const savedSolidDataset = await saveSolidDatasetAt(
-        "https://mauritsderoover.solidcommunity.net/universityZ/fall2021/courses/Writing101",
-        courseSolidDataset,
-        { fetch: fetch } // fetch from authenticated Session
-      );
-    },
     loadDataTester() {
-      loadData();
+      savePageContent(
+        "020A5eE5SBMEtY9jicbM7atqUbqF",
+        "Tester content antoher content"
+      ).then(() => {
+        console.log("content should have been saved");
+      });
     },
     createNotebook() {
       console.log("this has been called! ");
@@ -283,16 +254,21 @@ export default defineComponent({
       // for every tab we get the related dataset
       this.currentTab = this.tabItems[0].key;
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
+      this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
       this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
+      if (this.editor) {
+        this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
+      }
     },
     // Keep track of active tabs and menu items
     updateCurrentTab(event: { index: number }) {
       this.activeIndex = event.index;
       this.currentTab = this.tabItems[this.activeIndex].key;
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
+      this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
       this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
       if (this.editor) {
-        this.editor.setContents(this.editors[this.currentEditor]);
+        this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
       }
     },
     addTab() {
@@ -305,6 +281,8 @@ export default defineComponent({
           this.currentTab = newTabItem.key;
 
           this.panelMenuItems = { ...this.panelMenuItems, ...newPanelMenu };
+          this.currentMenuPanelItem = newPanelMenu[this.currentTab][0].key;
+          if (this.editor) this.editor;
         });
     },
     async addMenuElement(): Promise<void> {
@@ -317,11 +295,17 @@ export default defineComponent({
     createTabUrl(name: string): URL {
       return new URL(`${this.$store.getters.getOrigin}/notes/${name}`);
     },
-    updateMenuItem(event: { item: ItemInterface }) {
+    updateMenuItem(event: { item: PageItem }) {
+      console.log("this is the event", event);
+      console.log(
+        "this is panelMenuItems",
+        this.panelMenuItems[this.currentTab][0].editor
+      );
       this.activeMenuElement = event.item;
+      this.currentMenuPanelItem = event.item.key;
       this.currentEditor = this.activeMenuElement.key;
       if (this.editor) {
-        this.editor.setContents(this.editors[this.currentEditor]);
+        this.editor.setContents(this.activeMenuElement.editor);
       }
     },
   },

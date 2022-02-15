@@ -108,8 +108,8 @@ import draggable from "vuedraggable";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
 import {
   DraggableTabMenu,
-  ItemInterface,
-} from "@/components/modules/editor/Editor";
+  BaseItem,
+} from "@/components/modules/editor/editor-interfaces";
 
 export default defineComponent({
   name: "DraggableTabMenu",
@@ -118,7 +118,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Array as PropType<Array<ItemInterface>>,
+      type: Array as PropType<Array<BaseItem>>,
       default: null,
     },
     exact: {
@@ -201,7 +201,7 @@ export default defineComponent({
     },
     catchClickEvent(
       event: PointerEvent,
-      item: ItemInterface,
+      item: BaseItem,
       index: number,
       navigate?: string
     ) {
@@ -236,7 +236,7 @@ export default defineComponent({
     },
     onItemClick(
       event: PointerEvent,
-      item: ItemInterface,
+      item: BaseItem,
       index: number,
       navigate: any
     ) {
