@@ -184,8 +184,11 @@ export default defineComponent({
   },
   methods: {
     abortLabelChange() {
-      console.log("this has been reached in abortLabelChange");
-      this.$emit("label-changed", this.doubleClickActiveIndex);
+      console.log("this has been reached in abortLabelChange", this.doubleClickedItem);
+      this.$emit("label-changed", {
+        activeIndex: this.doubleClickActiveIndex,
+        doubleClickedItem: this.doubleClickedItem,
+      });
       this.doubleClickActiveIndex = undefined;
       this.changeLabel = false;
       this.doubleClickedItem = undefined;

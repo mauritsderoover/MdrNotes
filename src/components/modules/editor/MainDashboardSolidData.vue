@@ -89,8 +89,10 @@ import {
   newPage,
   newSection,
   savePageContent,
+  saveTitle,
 } from "@/components/modules/editor/DataModel";
-import { PageItem } from "@/components/modules/editor/editor-classes";
+import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
+import DataLoader from "@/components/modules/editor/dataloader";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
 export default defineComponent({
@@ -120,6 +122,7 @@ export default defineComponent({
     const URI = `${this.$store.getters.getOrigin}/notes/`;
     // await deleteContainerContents(URI);
     if (await containerExists(URI)) {
+      // new DataLoader("https://mauritsderoover.solidcommunity.net/notes/");
       await this.loadData();
     } else {
       await this.createInitialNotes();
@@ -213,25 +216,6 @@ export default defineComponent({
       newDataSet = setThing(newDataSet, newThing);
 
       await saveSolidDatasetAt(uri, newDataSet, { fetch });
-
-      // if (solidDataset) {
-      //   let things = getThing(solidDataset, uri);
-      //   // solidDataset = removeThing(solidDataset, uri);
-      //   if (things) {
-      //     things = buildThing(createThing({ name: "Tester1" }))
-      //       .addUrl(RDF.type, NOTETAKING.Section)
-      //       .addDecimal(NOTETAKING.partOfSectionGroup, 5)
-      //       .build();
-      //     console.log("things", things);
-      //     solidDataset = setThing(solidDataset, things);
-      //     console.log("newDataSet", solidDataset);
-      //     await saveSolidDatasetAt(uri, solidDataset, {
-      //       fetch,
-      //     }).then(() => {
-      //       console.log("this has been successful");
-      //     });
-      //   }
-      // }
     },
     deleteRootContainer() {
       const uri = "https://mauritsderoover.solidcommunity.net/notes/";
@@ -241,8 +225,12 @@ export default defineComponent({
     changeTitle() {
       console.log("this is blabla");
     },
-    labelChange(event: any) {
-      console.log("this has been executed", event);
+    labelChange(event: { activeIndex: number; doubleClickedItem: TabItem }) {
+      console.log(
+        "this has been executed in labelChange",
+        event.doubleClickedItem
+      );
+      saveTitle(event.doubleClickedItem.key, event.doubleClickedItem.label);
     },
     createInitialNotes() {
       newNoteBook("Your First Notebook").then(() => {
@@ -296,11 +284,6 @@ export default defineComponent({
       return new URL(`${this.$store.getters.getOrigin}/notes/${name}`);
     },
     updateMenuItem(event: { item: PageItem }) {
-      console.log("this is the event", event);
-      console.log(
-        "this is panelMenuItems",
-        this.panelMenuItems[this.currentTab][0].editor
-      );
       this.activeMenuElement = event.item;
       this.currentMenuPanelItem = event.item.key;
       this.currentEditor = this.activeMenuElement.key;

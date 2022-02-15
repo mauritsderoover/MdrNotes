@@ -53,6 +53,7 @@ const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 export async function loadData(): Promise<
   [string, TabItems, Record<IriString, TabItems>]
 > {
+  console.log("loadData has been started", new Date());
   const rootDataSet = await getData(ROOT_URL);
   const urls = rootDataSet
     ? getContainedResourceUrlAll(rootDataSet)
@@ -61,8 +62,41 @@ export async function loadData(): Promise<
   const thingList = dataSet ? getThingAll(dataSet) : undefined;
   const thing = thingList ? thingList[0] : undefined;
 
-  if (thing) return await processThing(thing);
+  if (thing) {
+    const toBeReturned = await processThing(thing);
+    console.log("loadData is done", new Date());
+    return toBeReturned;
+  }
   throw new Error("No thing was found");
+}
+
+export async function saveTitle(
+  identifier: string,
+  newTitle: string
+): Promise<void> {
+  const URL = retrieveUrl(identifier);
+  const dataSet = await getData(URL);
+  if (dataSet) {
+    let thing = getThing(dataSet, URL);
+    if (!thing) throw new Error("No thing could be retrieved");
+    if (isPage(thing) || isSection(thing)) {
+      thing = buildThing(thing)
+        .setStringNoLocale(DCTERMS.title, newTitle)
+        .build();
+      await saveSolidDatasetAt(URL, setThing(dataSet, thing), {
+        fetch,
+      });
+    } else {
+      throw new Error("Thing is not a page or a section");
+    }
+  }
+}
+
+function retrieveUrl(identifier: string): string {
+  let URL = ROOT_URL;
+  if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+  else URL = URL + identifier;
+  return URL;
 }
 
 export async function savePageContent(
@@ -178,7 +212,9 @@ function getPageUrls(thing: ThingPersisted): string[] {
   return getThingUrls(thing, NOTETAKING.hasPage);
 }
 
-async function getThingFromSolidPod(url: string): Promise<ThingPersisted> {
+export async function getThingFromSolidPod(
+  url: string
+): Promise<ThingPersisted> {
   const thingDataSet = await getData(url);
   if (thingDataSet) {
     const thing: ThingPersisted | null = getThing(thingDataSet, url);
