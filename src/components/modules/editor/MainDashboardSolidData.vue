@@ -254,14 +254,18 @@ export default defineComponent({
       // for every tab we get the related dataset
       this.currentTab = this.tabItems[0].key;
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
+      this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
       this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
-      this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
+      if (this.editor) {
+        this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
+      }
     },
     // Keep track of active tabs and menu items
     updateCurrentTab(event: { index: number }) {
       this.activeIndex = event.index;
       this.currentTab = this.tabItems[this.activeIndex].key;
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
+      this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
       this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
       if (this.editor) {
         this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
@@ -298,9 +302,10 @@ export default defineComponent({
         this.panelMenuItems[this.currentTab][0].editor
       );
       this.activeMenuElement = event.item;
+      this.currentMenuPanelItem = event.item.key;
       this.currentEditor = this.activeMenuElement.key;
       if (this.editor) {
-        this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
+        this.editor.setContents(this.activeMenuElement.editor);
       }
     },
   },
