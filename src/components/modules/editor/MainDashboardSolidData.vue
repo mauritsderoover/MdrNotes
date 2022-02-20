@@ -1,6 +1,6 @@
 <template>
-  <div class="p-grid nested-grid">
-    <div class="p-col-12">
+  <div class="grid nested-grid">
+    <div class="col-12">
       <Button
         label="Create notebook"
         icon="pi pi-check"
@@ -20,35 +20,33 @@
         @click="deleteRootContainer"
       />
     </div>
-    <div class="p-col-12">
-      <Toolbar ref="toolbar" />
+    <div class="col-12">
+      <menu-bar v-if="editor" class="editor__header" :editor="editor" />
     </div>
-    <div class="p-col-12">
+    <div class="col-12">
       <DraggableTabMenu
         v-model:activeIndex="activeIndex"
         :model="tabItems"
+        :initial_data="initial_tabs"
         @tab-change="updateCurrentTab"
         @add-tab="addTab"
         @label-changed="labelChange"
       />
     </div>
-    <div class="p-col-12">
-      <div class="p-grid">
-        <div class="p-col-2">
+    <div class="col-12">
+      <div class="grid">
+        <div class="col-2">
           <DraggablePanelMenu
             :model="panelMenuItems[currentTab]"
             :section-identifier="currentTab"
             layer="mainItem"
             @tab-change="updateMenuItem"
             @add-menu-element="addMenuElement"
+            @label-changed="labelChange"
           />
         </div>
-        <div class="p-col-10">
-          <div
-            ref="editor"
-            v-bind="editors[currentEditor]"
-            style="height: 400px"
-          ></div>
+        <div class="col-10">
+          <editor-content v-if="editor" :editor="editor" />
         </div>
       </div>
     </div>
@@ -57,6 +55,13 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { Editor, EditorContent } from "@tiptap/vue-3";
+import StarterKit from "@tiptap/starter-kit";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Highlight from "@tiptap/extension-highlight";
+import CharacterCount from "@tiptap/extension-character-count";
+import MenuBar from "../../modules/editor/actioncomponents/EditorComponents/MenuBar.vue";
 import Button from "primevue/button";
 import {
   containerExists,
@@ -65,8 +70,7 @@ import {
   deleteContainerContents,
 } from "@/components/genericcomponents/utils/utils";
 import DraggableTabMenu from "../../modules/editor/actioncomponents/MenuComponents/DraggableTabMenu.vue";
-import Toolbar from "../../modules/editor/actioncomponents/EditorComponents/Toolbar.vue";
-import Quill, { Delta } from "quill";
+// import Toolbar from "../../modules/editor/actioncomponents/EditorComponents/Toolbar.vue";
 import DraggablePanelMenu from "../../modules/editor/actioncomponents/MenuComponents/DraggablePanelMenu.vue";
 import {
   buildThing,
@@ -92,19 +96,22 @@ import {
   saveTitle,
 } from "@/components/modules/editor/DataModel";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
-import DataLoader from "@/components/modules/editor/dataloader";
+// import DataLoader from "@/components/modules/editor/dataloader";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
 export default defineComponent({
   name: "MainDashboard",
   components: {
     DraggablePanelMenu,
-    Toolbar,
+    // Toolbar,
+    MenuBar,
+    EditorContent,
     DraggableTabMenu,
     Button,
   },
   data(): MainDashBoardInterface {
     return {
+      initial_tabs: true,
       tabItems: [],
       panelMenuItems: {},
       currentTab: "",
@@ -128,35 +135,54 @@ export default defineComponent({
       await this.createInitialNotes();
     }
   },
+  beforeUnmount() {
+    if (this.editor) this.editor.destroy();
+  },
   mounted() {
-    this.editor = new Quill(this.$refs.editor as HTMLDivElement, {
-      theme: "snow",
-      modules: {
-        toolbar: (this.$refs.toolbar as any).$refs.toolbar,
-      },
-    }) as Quill;
-
-    this.editor.root.innerHTML = this.editors[
-      this.currentEditor
-    ] as unknown as string;
-    this.editor.on("text-change", () => {
-      if (this.editor) {
-        // console.log("this is editor", this.editor);
-        console.log("this is activeMenuElement", this.activeMenuElement);
-        if (this.activeMenuElement) {
-          this.activeMenuElement.editor = this.editor.getContents();
-          console.log(
-            "this is currentMenuPanelItem",
-            this.currentMenuPanelItem
-          );
-        }
-        this.editors[this.currentEditor] = this.editor.getContents();
-        savePageContent(
-          this.currentMenuPanelItem,
-          JSON.stringify(this.editor.getContents())
-        );
-      }
+    console.log("this is this.$refs.editor", this.$refs.editor);
+    console.log("this is the editor", this.editor);
+    this.editor = new Editor({
+      injectCSS: false,
+      autofocus: true,
+      extensions: [
+        StarterKit.configure({
+          history: false,
+        }),
+        Highlight,
+        TaskList,
+        TaskItem,
+        CharacterCount.configure({
+          limit: 10000,
+        }),
+      ],
     });
+    if (this.editor) {
+      this.editor.commands.setContent(
+        this.activeMenuElement ? this.activeMenuElement.editor : ""
+      );
+      this.editor.on("update", () => {
+        if (this.editor) {
+          if (this.activeMenuElement)
+            this.activeMenuElement.editor = this.editor.getHTML();
+          savePageContent(this.currentMenuPanelItem, this.editor.getHTML());
+        }
+      });
+    }
+    // this.editor.on("text-change", () => {
+    //   if (this.editor) {
+    //     // console.log("this is editor", this.editor);
+    //     console.log("this is activeMenuElement", this.activeMenuElement);
+    //     if (this.activeMenuElement) {
+    //       this.activeMenuElement.editor = this.editor.getContents();
+    //       console.log("this.editor", this.editor);
+    //     }
+    //     // this.editors[this.currentEditor] = this.editor.getContents();
+    //     savePageContent(
+    //       this.currentMenuPanelItem,
+    //       JSON.stringify(this.editor.getContents())
+    //     );
+    //   }
+    // });
   },
   methods: {
     /**
@@ -226,10 +252,6 @@ export default defineComponent({
       console.log("this is blabla");
     },
     labelChange(event: { activeIndex: number; doubleClickedItem: TabItem }) {
-      console.log(
-        "this has been executed in labelChange",
-        event.doubleClickedItem
-      );
       saveTitle(event.doubleClickedItem.key, event.doubleClickedItem.label);
     },
     createInitialNotes() {
@@ -238,15 +260,17 @@ export default defineComponent({
       });
     },
     async loadData() {
+      this.initial_tabs = true;
       [this.notebook, this.tabItems, this.panelMenuItems] = await loadData();
       // for every tab we get the related dataset
       this.currentTab = this.tabItems[0].key;
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
       this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
-      this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
+      // this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
       if (this.editor) {
-        this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
+        this.editor.commands.setContent(this.activeMenuElement.editor);
       }
+      this.initial_tabs = false;
     },
     // Keep track of active tabs and menu items
     updateCurrentTab(event: { index: number }) {
@@ -254,10 +278,8 @@ export default defineComponent({
       this.currentTab = this.tabItems[this.activeIndex].key;
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
       this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
-      this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
-      if (this.editor) {
-        this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
-      }
+      // this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
+      // this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
     },
     addTab() {
       if (this.notebook)
@@ -270,7 +292,11 @@ export default defineComponent({
 
           this.panelMenuItems = { ...this.panelMenuItems, ...newPanelMenu };
           this.currentMenuPanelItem = newPanelMenu[this.currentTab][0].key;
-          if (this.editor) this.editor;
+          this.activeMenuElement = this.panelMenuItems[
+            this.currentMenuPanelItem
+          ] as unknown as PageItem;
+          if (this.editor)
+            this.editor.commands.setContent(this.activeMenuElement.editor);
         });
     },
     async addMenuElement(): Promise<void> {
@@ -286,15 +312,219 @@ export default defineComponent({
     updateMenuItem(event: { item: PageItem }) {
       this.activeMenuElement = event.item;
       this.currentMenuPanelItem = event.item.key;
-      this.currentEditor = this.activeMenuElement.key;
+      // this.currentEditor = this.activeMenuElement.key;
       if (this.editor) {
-        this.editor.setContents(this.activeMenuElement.editor);
+        this.editor.commands.setContent(this.activeMenuElement.editor);
+        // this.editor.update();
       }
     },
   },
 });
 </script>
 
-<style scoped>
-@import "https://cdn.quilljs.com/1.3.6/quill.snow.css";
+<style lang="scss">
+.editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 5rem;
+  max-height: 26rem;
+  color: #0d0d0d;
+  background-color: #fff;
+  border: 3px solid #0d0d0d;
+  border-radius: 0.75rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    padding: 0.25rem;
+    border-bottom: 3px solid #0d0d0d;
+  }
+
+  &__content {
+    padding: 1.25rem 1rem;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__footer {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    white-space: nowrap;
+    border-top: 3px solid #0d0d0d;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0d0d0d;
+    white-space: nowrap;
+    padding: 0.25rem 0.75rem;
+  }
+
+  /* Some information about the status */
+  &__status {
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+
+    &::before {
+      content: " ";
+      flex: 0 0 auto;
+      display: inline-block;
+      width: 0.5rem;
+      height: 0.5rem;
+      background: rgba(#0d0d0d, 0.5);
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    &--connecting::before {
+      background: #616161;
+    }
+
+    &--connected::before {
+      background: #b9f18d;
+    }
+  }
+
+  &__name {
+    button {
+      background: none;
+      border: none;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: #0d0d0d;
+      border-radius: 0.4rem;
+      padding: 0.25rem 0.5rem;
+
+      &:hover {
+        color: #fff;
+        background-color: #0d0d0d;
+      }
+    }
+  }
+}
+</style>
+
+<style lang="scss">
+/* Give a remote user a caret */
+.collaboration-cursor__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  word-break: normal;
+  pointer-events: none;
+}
+
+/* Render the username above the caret */
+.collaboration-cursor__label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  color: #0d0d0d;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px 3px 3px 0;
+  white-space: nowrap;
+}
+
+.ProseMirror {
+  min-height: 400px;
+}
+
+/* Basic editor styles */
+.ProseMirror {
+  > * + * {
+    margin-top: 0.75em;
+  }
+
+  ul,
+  ol {
+    padding: 0 1rem;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    line-height: 1.1;
+  }
+
+  code {
+    background-color: rgba(#616161, 0.1);
+    color: #616161;
+  }
+
+  pre {
+    background: #0d0d0d;
+    color: #fff;
+    font-family: "JetBrainsMono", monospace;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+
+    code {
+      color: inherit;
+      padding: 0;
+      background: none;
+      font-size: 0.8rem;
+    }
+  }
+
+  mark {
+    background-color: #faf594;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  hr {
+    margin: 1rem 0;
+  }
+
+  blockquote {
+    padding-left: 1rem;
+    border-left: 2px solid rgba(#0d0d0d, 0.1);
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid rgba(#0d0d0d, 0.1);
+    margin: 2rem 0;
+  }
+
+  ul[data-type="taskList"] {
+    list-style: none;
+    padding: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+
+      > label {
+        flex: 0 0 auto;
+        margin-right: 0.5rem;
+        user-select: none;
+      }
+
+      > div {
+        flex: 1 1 auto;
+      }
+    }
+  }
+}
 </style>
