@@ -129,6 +129,11 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
+    initial_data: {
+      type: Boolean,
+      default: true,
+      required: true,
+    },
   },
   emits: ["update:activeIndex", "tab-change", "add-tab", "label-changed"],
   data(): DraggableTabMenu {
@@ -153,30 +158,36 @@ export default defineComponent({
   },
   watch: {
     "model.length"() {
-      this.changeLabel = false;
-      this.activeItem = undefined;
-      this.doubleClickedItem = undefined;
-      if (this.model.length > 1) {
-        this.changeLabel = true;
-        if (this.model) {
-          this.activeItem = this.model[this.model.length - 1];
-        }
-        this.doubleClickedItem = this.activeItem;
-
-        setTimeout(() => {
-          if (this.activeItem) {
-            this.inputItem = this.$refs[
-              `input_${this.activeItem.key}`
-            ] as HTMLInputElement;
-            // (
-            //   this.$refs[`input_${this.activeItem.key}`] as HTMLDivElement
-            // ).focus();
+      console.log("this has been called!");
+      if (this.initial_data) {
+        this.changeLabel = false;
+        this.activeItem = undefined;
+        this.doubleClickedItem = undefined;
+        if (this.model.length > 1) {
+          this.changeLabel = true;
+          if (this.model) {
+            this.activeItem = this.model[this.model.length - 1];
           }
-        }, 0);
+          this.doubleClickedItem = this.activeItem;
+
+          setTimeout(() => {
+            if (this.activeItem) {
+              this.inputItem = this.$refs[
+                `input_${this.activeItem.key}`
+              ] as HTMLInputElement;
+              // (
+              //   this.$refs[`input_${this.activeItem.key}`] as HTMLDivElement
+              // ).focus();
+            }
+          }, 0);
+        }
       }
     },
   },
   mounted() {
+    if (this.model) {
+      this.activeItem = this.model[0];
+    }
     document.addEventListener("click", this.onClickOutside);
   },
   beforeUnmount() {
@@ -184,7 +195,6 @@ export default defineComponent({
   },
   methods: {
     abortLabelChange() {
-      console.log("this has been reached in abortLabelChange", this.doubleClickedItem);
       this.$emit("label-changed", {
         activeIndex: this.doubleClickActiveIndex,
         doubleClickedItem: this.doubleClickedItem,

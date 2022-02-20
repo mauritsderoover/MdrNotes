@@ -243,7 +243,10 @@ export default defineComponent({
       this.$emit("tab-change", event);
     },
     abortLabelChange() {
-      this.$emit("label-changed", this.doubleClickActiveIndex);
+      this.$emit("label-changed", {
+        activeIndex: this.doubleClickActiveIndex,
+        doubleClickedItem: this.doubleClickedItem,
+      });
       this.doubleClickActiveIndex = undefined;
       this.changeLabel = false;
       this.doubleClickedItem = undefined;
