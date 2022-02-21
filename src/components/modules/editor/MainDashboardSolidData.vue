@@ -96,6 +96,7 @@ import {
   saveTitle,
 } from "@/components/modules/editor/DataModel";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
+import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 // import DataLoader from "@/components/modules/editor/dataloader";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
@@ -123,6 +124,9 @@ export default defineComponent({
       editor: undefined,
       activeMenuElement: undefined,
       notebook: undefined,
+      synchronizer: new DataSynchronizer(
+        "https://mauritsderoover.solidcommunity.net/notes/"
+      ),
     };
   },
   async beforeMount() {
@@ -164,25 +168,14 @@ export default defineComponent({
         if (this.editor) {
           if (this.activeMenuElement)
             this.activeMenuElement.editor = this.editor.getHTML();
-          savePageContent(this.currentMenuPanelItem, this.editor.getHTML());
+          // savePageContent(this.currentMenuPanelItem, this.editor.getHTML())
+          this.synchronizer.addContentChange(
+            this.currentMenuPanelItem,
+            this.editor.getHTML()
+          );
         }
       });
     }
-    // this.editor.on("text-change", () => {
-    //   if (this.editor) {
-    //     // console.log("this is editor", this.editor);
-    //     console.log("this is activeMenuElement", this.activeMenuElement);
-    //     if (this.activeMenuElement) {
-    //       this.activeMenuElement.editor = this.editor.getContents();
-    //       console.log("this.editor", this.editor);
-    //     }
-    //     // this.editors[this.currentEditor] = this.editor.getContents();
-    //     savePageContent(
-    //       this.currentMenuPanelItem,
-    //       JSON.stringify(this.editor.getContents())
-    //     );
-    //   }
-    // });
   },
   methods: {
     /**
@@ -279,7 +272,10 @@ export default defineComponent({
       this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
       this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
       // this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
-      // this.editor.setContents(this.panelMenuItems[this.currentTab][0].editor);
+      if (this.editor)
+        this.editor.commands.setContent(
+          this.panelMenuItems[this.currentTab][0].editor
+        );
     },
     addTab() {
       if (this.notebook)

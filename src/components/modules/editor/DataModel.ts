@@ -286,7 +286,7 @@ function isPageGroup(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.PageGroup);
 }
 
-function isPage(thing: Thing): boolean {
+export function isPage(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.Note);
 }
 
@@ -375,7 +375,7 @@ function processLiterals(
  *
  * @param iri
  */
-function retrieveIdentifier(iri: string): string {
+export function retrieveIdentifier(iri: string): string {
   const lastElement = iri.split("/").at(-1);
   if (lastElement) return lastElement;
   throw new Error("No last element found");

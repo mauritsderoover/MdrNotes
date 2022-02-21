@@ -1,5 +1,6 @@
 import { Editor } from "@tiptap/vue-3";
 import { PageItem } from "@/components/modules/editor/editor-classes";
+import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 
 export interface ContextMenuItem {
   label: string;
@@ -96,4 +97,5 @@ export interface MainDashBoardInterface {
   editor: undefined | Editor;
   activeMenuElement: PageItem | undefined;
   notebook: string | undefined;
+  synchronizer: DataSynchronizer
 }
