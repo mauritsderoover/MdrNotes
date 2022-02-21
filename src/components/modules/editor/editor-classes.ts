@@ -1,11 +1,10 @@
-import { Delta } from "quill";
 import {
   BaseItem,
   PanelMenuItem,
 } from "@/components/modules/editor/editor-interfaces";
 
 export interface PageItemParameters {
-  editor: Delta | Record<never, never>;
+  editor: string;
   label: string;
   url: string;
   key?: string;
@@ -23,9 +22,9 @@ interface TabItemParameters {
 export class PageItem implements PanelMenuItem {
   key: string;
   uri: URL;
-  editor: Delta | Record<never, never>;
+  editor: string;
   label: string;
-  items: Array<PanelMenuItem>;
+  items: Array<PageItem>;
   icon?: string;
   constructor(input: PageItemParameters) {
     this.key = input.key ? input.key : input.url;

@@ -10,7 +10,6 @@ import "primevue/resources/themes/saga-blue/theme.css"; // theme
 import "primevue/resources/primevue.min.css"; // core css
 import "primeflex/primeflex.css";
 import "primeicons/primeicons.css"; // icons
-import "quill/dist/quill.snow.css";
 // import "vue-toast-notification/dist/theme-sugar.css";
 
 createApp(App)

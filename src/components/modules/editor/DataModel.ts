@@ -41,18 +41,29 @@ import {
   PanelMenuItems,
   TabItems,
 } from "@/components/modules/editor/editor-interfaces";
-import { XmlSchemaTypeIri } from "@inrupt/solid-client/src/datatypes";
-import { IriString } from "@inrupt/solid-client/src/interfaces";
-import { xmlSchemaTypes } from "@inrupt/solid-client/dist/datatypes";
+// import { XmlSchemaTypeIri } from "@inrupt/solid-client/src/datatypes";
+// import { IriString } from "@inrupt/solid-client/src/interfaces";
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
-import { Delta, DeltaOperation } from "quill";
 
 const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 
-export async function loadData(): Promise<
-  [string, TabItems, Record<IriString, TabItems>]
-> {
+export type XmlSchemaTypeIri =
+  typeof xmlSchemaTypes[keyof typeof xmlSchemaTypes];
+
+export const xmlSchemaTypes = {
+  boolean: "http://www.w3.org/2001/XMLSchema#boolean",
+  dateTime: "http://www.w3.org/2001/XMLSchema#dateTime",
+  date: "http://www.w3.org/2001/XMLSchema#date",
+  time: "http://www.w3.org/2001/XMLSchema#time",
+  decimal: "http://www.w3.org/2001/XMLSchema#decimal",
+  integer: "http://www.w3.org/2001/XMLSchema#integer",
+  string: "http://www.w3.org/2001/XMLSchema#string",
+  langString: "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+} as const;
+
+export async function loadData(): Promise<[string, TabItems, PanelMenuItems]> {
+  console.log("loadData has been started", new Date());
   const rootDataSet = await getData(ROOT_URL);
   const urls = rootDataSet
     ? getContainedResourceUrlAll(rootDataSet)
@@ -61,8 +72,41 @@ export async function loadData(): Promise<
   const thingList = dataSet ? getThingAll(dataSet) : undefined;
   const thing = thingList ? thingList[0] : undefined;
 
-  if (thing) return await processThing(thing);
+  if (thing) {
+    const toBeReturned = await processThing(thing);
+    console.log("loadData is done", new Date());
+    return toBeReturned;
+  }
   throw new Error("No thing was found");
+}
+
+export async function saveTitle(
+  identifier: string,
+  newTitle: string
+): Promise<void> {
+  const URL = retrieveUrl(identifier);
+  const dataSet = await getData(URL);
+  if (dataSet) {
+    let thing = getThing(dataSet, URL);
+    if (!thing) throw new Error("No thing could be retrieved");
+    if (isPage(thing) || isSection(thing)) {
+      thing = buildThing(thing)
+        .setStringNoLocale(DCTERMS.title, newTitle)
+        .build();
+      await saveSolidDatasetAt(URL, setThing(dataSet, thing), {
+        fetch,
+      });
+    } else {
+      throw new Error("Thing is not a page or a section");
+    }
+  }
+}
+
+function retrieveUrl(identifier: string): string {
+  let URL = ROOT_URL;
+  if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+  else URL = URL + identifier;
+  return URL;
 }
 
 export async function savePageContent(
@@ -89,7 +133,7 @@ export async function savePageContent(
 
 async function processThing(
   thing: Thing
-): Promise<[string, TabItems, Record<IriString, TabItems>]> {
+): Promise<[string, TabItems, PanelMenuItems]> {
   if (isNoteBook(thing)) return await processNoteBook(thing);
   if (isSectionGroup(thing))
     throw new Error("Section groups are not supported");
@@ -106,9 +150,9 @@ async function processThing(
  */
 async function processNoteBook(
   thing: Thing
-): Promise<[string, TabItems, Record<IriString, TabItems>]> {
+): Promise<[string, TabItems, PanelMenuItems]> {
   const sectionUrls = getSectionUrls(thing);
-  const panelMenuItems: Record<IriString, TabItems> = {};
+  const panelMenuItems: PanelMenuItems = {};
   const tabItems: TabItems = [];
   for (const section of sectionUrls) {
     const identifier = retrieveIdentifier(section);
@@ -132,13 +176,11 @@ async function processPage(url: string): Promise<PageItem> {
   });
 }
 
-function getEditorContent(content: string): { ops: DeltaOperation[] } {
+function getEditorContent(content: string): string {
   try {
-    console.log("this is content", content);
-    console.log("this is JSON Parsed", JSON.parse(content));
     return JSON.parse(content);
   } catch {
-    return { ops: [] };
+    return content;
   }
 }
 
@@ -146,7 +188,7 @@ function getEditorContent(content: string): { ops: DeltaOperation[] } {
  * Sections can contain pages and page groups but currently only pages are supported
  * @param sectionUrl
  */
-async function processSection(sectionUrl: string): Promise<TabItems> {
+async function processSection(sectionUrl: string): Promise<PanelMenuItem[]> {
   const sectionThing = await getThingFromSolidPod(sectionUrl);
   const section: Array<PanelMenuItem> = [];
   if (hasPages(sectionThing)) {
@@ -167,7 +209,7 @@ async function processSection(sectionUrl: string): Promise<TabItems> {
         key: pageIdentifier,
         url: `${ROOT_URL} + ${pageIdentifier}`,
         label: "SomeRandomPage",
-        editor: new Delta(),
+        editor: "",
       })
     );
     return section;
@@ -178,7 +220,9 @@ function getPageUrls(thing: ThingPersisted): string[] {
   return getThingUrls(thing, NOTETAKING.hasPage);
 }
 
-async function getThingFromSolidPod(url: string): Promise<ThingPersisted> {
+export async function getThingFromSolidPod(
+  url: string
+): Promise<ThingPersisted> {
   const thingDataSet = await getData(url);
   if (thingDataSet) {
     const thing: ThingPersisted | null = getThing(thingDataSet, url);
@@ -242,7 +286,7 @@ function isPageGroup(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.PageGroup);
 }
 
-function isPage(thing: Thing): boolean {
+export function isPage(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.Note);
 }
 
@@ -277,12 +321,10 @@ function getThingType(thing: Thing): string | readonly string[] | undefined {
 }
 
 function getPageText(thing: ThingPersisted): string {
-  console.log("this is thing", thing);
   const titlePredicates = getPredicate(thing, SCHEMA.Text);
   if (titlePredicates) {
     if (Array.isArray(titlePredicates) && titlePredicates.length > 0)
       return titlePredicates[0];
-    console.log("this is titlePredicates", titlePredicates);
     if (typeof titlePredicates === "string") return titlePredicates;
     throw new Error("Impossible option has been reached");
   }
@@ -318,7 +360,7 @@ function getPredicate(
   }
 }
 
-type DataTypeIriString = XmlSchemaTypeIri | IriString;
+type DataTypeIriString = XmlSchemaTypeIri | string;
 
 function processLiterals(
   literals: Readonly<Record<DataTypeIriString, readonly string[]>>
@@ -333,7 +375,7 @@ function processLiterals(
  *
  * @param iri
  */
-function retrieveIdentifier(iri: IriString): string {
+export function retrieveIdentifier(iri: string): string {
   const lastElement = iri.split("/").at(-1);
   if (lastElement) return lastElement;
   throw new Error("No last element found");
@@ -378,7 +420,7 @@ export async function newSection(
         label: "New Page",
         url: ROOT_URL + pageIdentifier,
         key: pageIdentifier,
-        editor: new Delta(),
+        editor: "",
       }),
     ],
   };
@@ -386,14 +428,14 @@ export async function newSection(
   return [newTabItem, newPanelMenu];
 }
 
-export async function newPage(sectionIdentifier: string): Promise<BaseItem> {
+export async function newPage(sectionIdentifier: string): Promise<PageItem> {
   const pageIdentifier = await createPage("New Page");
   await linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier);
   return new PageItem({
     label: "New Page",
     url: ROOT_URL + pageIdentifier,
     key: pageIdentifier,
-    editor: new Delta(),
+    editor: "",
   });
 }
 

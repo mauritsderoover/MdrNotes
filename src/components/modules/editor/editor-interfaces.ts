@@ -1,4 +1,6 @@
-import Quill, { Delta } from "quill";
+import { Editor } from "@tiptap/vue-3";
+import { PageItem } from "@/components/modules/editor/editor-classes";
+import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 
 export interface ContextMenuItem {
   label: string;
@@ -22,7 +24,7 @@ type Section = BaseItem;
  * @alias: A PanelMenuItem is an alias for a page and a page-group
  */
 export interface PanelMenuItem extends BaseItem {
-  editor: Delta | Record<never, never>;
+  editor: string;
   items: Array<PanelMenuItem>;
 }
 
@@ -45,11 +47,11 @@ export type TabItems = Array<Section>;
  * SectionIdentifier2: Section2_Pages,}
  */
 export interface PanelMenuItems {
-  [index: string]: Array<PanelMenuItem>;
+  [index: string]: Array<PageItem>;
 }
 
 export interface Editors {
-  [index: string]: Delta;
+  [index: string]: Record<never, never>;
 }
 
 export interface DraggableTabMenu {
@@ -83,6 +85,7 @@ export interface DraggablePanelMenu {
 }
 
 export interface MainDashBoardInterface {
+  initial_tabs: boolean;
   tabItems: TabItems;
   panelMenuItems: PanelMenuItems;
   currentTab: string;
@@ -91,7 +94,8 @@ export interface MainDashBoardInterface {
   lazy: boolean;
   editors: Editors;
   currentEditor: string;
-  editor: Quill | undefined;
-  activeMenuElement: PanelMenuItem | undefined;
+  editor: undefined | Editor;
+  activeMenuElement: PageItem | undefined;
   notebook: string | undefined;
+  synchronizer: DataSynchronizer
 }

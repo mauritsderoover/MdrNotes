@@ -219,17 +219,12 @@ export default defineComponent({
           this.doubleClickedItem = this.activeItem;
           setTimeout(() => {
             if (this.activeItem) {
-              console.log("this is all in model.length");
-              console.log("this is activeItem", this.activeItem);
               const input_identifier = encodeURI(
                 `input_${this.activeItem.key}`
               );
-              console.log("this is input_identifier", input_identifier);
-              console.log("this is refs", this.$refs);
               this.inputElement = this.$refs[
                 input_identifier
               ] as HTMLInputElement;
-              console.log("this is inputElement", this.inputElement);
               // (this.$refs[input_identifier] as HTMLDivElement).focus();
             }
           }, 0);
@@ -238,7 +233,6 @@ export default defineComponent({
     },
   },
   mounted() {
-    console.log("this is executed in mounted");
     document.addEventListener("click", this.onClickOutside);
   },
   beforeUnmount() {
@@ -249,7 +243,10 @@ export default defineComponent({
       this.$emit("tab-change", event);
     },
     abortLabelChange() {
-      this.$emit("label-changed", this.doubleClickActiveIndex);
+      this.$emit("label-changed", {
+        activeIndex: this.doubleClickActiveIndex,
+        doubleClickedItem: this.doubleClickedItem,
+      });
       this.doubleClickActiveIndex = undefined;
       this.changeLabel = false;
       this.doubleClickedItem = undefined;
@@ -290,16 +287,11 @@ export default defineComponent({
       this.changeLabel = true;
 
       setTimeout(() => {
-        console.log("this is in setTimeout in doubleClickItem");
-        console.log("this is refs", this.$refs);
         this.inputElement = this.$refs[`input_${item.key}`] as HTMLInputElement;
-        console.log("this is something", this.$refs[`input_${item.key}`]);
-        console.log("this is inputelement", this.inputElement);
         (this.$refs[`input_${item.key}`] as HTMLDivElement).focus();
       }, 0);
     },
     onItemClick(event: PointerEvent, item: any, index: number, navigate: any) {
-      console.log("this is called in onItemClick");
       if (this.isActive(item) && this.activeItem === undefined) {
         this.activeItem = item;
       }
