@@ -77,6 +77,7 @@ import {
 } from "@/components/modules/editor/DataModel";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
 import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
+import DataLoader from "@/components/modules/editor/data-loader";
 // import DataLoader from "@/components/modules/editor/dataloader";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
@@ -88,7 +89,7 @@ export default defineComponent({
     MenuBar,
     EditorContent,
     DraggableTabMenu,
-    Button,
+    // Button,
   },
   data(): MainDashBoardInterface {
     return {
@@ -107,14 +108,21 @@ export default defineComponent({
       synchronizer: new DataSynchronizer(
         "https://mauritsderoover.solidcommunity.net/notes/"
       ),
+      dataLoader: undefined,
     };
   },
   async beforeMount() {
     const URI = `${this.$store.getters.getOrigin}/notes/`;
+    this.dataLoader = new DataLoader(
+      "https://mauritsderoover.solidcommunity.net/notes/",
+      this.panelMenuItems,
+      this.tabItems
+    );
     // await deleteContainerContents(URI);
     if (await containerExists(URI)) {
-      // new DataLoader("https://mauritsderoover.solidcommunity.net/notes/");
-      await this.loadData();
+      console.log(this.dataLoader.panelMenuItems);
+      this.dataLoader.loadData();
+      // await this.loadData();
     } else {
       await this.createInitialNotes();
     }
