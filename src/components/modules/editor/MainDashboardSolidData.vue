@@ -1,26 +1,6 @@
 <template>
   <div class="grid nested-grid">
     <div class="col-12">
-      <Button
-        label="Create notebook"
-        icon="pi pi-check"
-        class="p-button-help"
-        @click="createNotebook"
-      />
-      <Button
-        label="saveSomeContent"
-        icon="pi pi-check"
-        class="p-button-help"
-        @click="loadDataTester"
-      />
-      <Button
-        label="Delete root container"
-        icon="pi pi-check"
-        class="p-button-help"
-        @click="deleteRootContainer"
-      />
-    </div>
-    <div class="col-12">
       <menu-bar v-if="editor" class="editor__header" :editor="editor" />
     </div>
     <div class="col-12">
