@@ -1,28 +1,31 @@
 <template>
   <div class="grid nested-grid">
+    <button @click="saveAllPositions">Save All positions</button>
     <div class="col-12">
       <menu-bar v-if="editor" class="editor__header" :editor="editor" />
     </div>
     <div class="col-12">
-      <DraggableTabMenu
+      <draggable-tab-menu
         v-model:activeIndex="activeIndex"
         :model="tabItems"
         :initial_data="initial_tabs"
         @tab-change="updateCurrentTab"
         @add-tab="addTab"
         @label-changed="labelChange"
+        @drag-ended="saveAllPositions"
       />
     </div>
     <div class="col-12">
       <div class="grid">
         <div class="col-2">
-          <DraggablePanelMenu
+          <draggable-panel-menu
             :model="panelMenuItems[currentTab]"
             :section-identifier="currentTab"
             layer="mainItem"
             @tab-change="updateMenuItem"
             @add-menu-element="addMenuElement"
             @label-changed="labelChange"
+            @drag-ended="saveAllPositions"
           />
         </div>
         <div class="col-10">
@@ -41,6 +44,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CharacterCount from "@tiptap/extension-character-count";
+import TextAlign from "@tiptap/extension-text-align";
 import MenuBar from "../../modules/editor/actioncomponents/EditorComponents/MenuBar.vue";
 import Button from "primevue/button";
 import {
@@ -78,6 +82,7 @@ import {
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
 import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 import DataLoader from "@/components/modules/editor/data-loader";
+
 // import DataLoader from "@/components/modules/editor/dataloader";
 
 // import { LDP } from "@inrupt/vocab-common-rdf";
@@ -146,6 +151,7 @@ export default defineComponent({
         CharacterCount.configure({
           limit: 10000,
         }),
+        TextAlign.configure({ types: ["heading", "paragraph"] }),
       ],
     });
     if (this.editor) {
@@ -166,24 +172,6 @@ export default defineComponent({
     }
   },
   methods: {
-    /**
-     * Some basic information about the structure
-     * Since in the SOLID mindset URLS shouldn't change, all notes will be creates in the main
-     * notes container. However, there is still a need to clarify where a specific note belongs to.
-     *
-     * Therefore, a note will always be both container as NoteDigitalDocument resource.
-     * On top of the container predicates. The container will always contain the following predicates
-     * rdf.type, SCHEMA.NoteDigitalDocument
-     * DCTERMS.title, "Some Random Title" (A string literal)
-     * SCHEMA.abstract, "Personal notes" (A string literal)
-     * SCHEMA.accountablePerson, WebId
-     * SCHEMA.creator, WebId
-     * SCHEMA.dateCreated, date
-     * SCHEMA.Text, ""
-     * (optional) SCHEMA.hasPart, URL  *OrANd* DCTERM.hasPart, URL
-     * (optional) SCHEMA.isPartOf, URL *OrAnd* DCTERM.isPartOf, URL
-     * (optional) SCHEMA.position, integer => this is required if a note container isPartOf another note container
-     * */
     createRootContainer() {
       DCTERMS.hasFormat;
       const uri = "https://mauritsderoover.solidcommunity.net/testerRoot/notes";
@@ -224,13 +212,13 @@ export default defineComponent({
 
       await saveSolidDatasetAt(uri, newDataSet, { fetch });
     },
+    saveAllPositions() {
+      if (this.dataLoader) this.dataLoader.saveAllPositions();
+    },
     deleteRootContainer() {
       const uri = "https://mauritsderoover.solidcommunity.net/notes/";
       deleteContainerContents(uri);
       // TODO
-    },
-    changeTitle() {
-      console.log("this is blabla");
     },
     labelChange(event: { activeIndex: number; doubleClickedItem: TabItem }) {
       saveTitle(event.doubleClickedItem.key, event.doubleClickedItem.label);
@@ -266,22 +254,12 @@ export default defineComponent({
         );
     },
     addTab() {
-      if (this.notebook)
-        newSection(this.notebook).then((value) => {
-          const newTabItem = value[0];
-          const newPanelMenu = value[1];
-
-          this.tabItems.push(newTabItem);
-          this.currentTab = newTabItem.key;
-
-          this.panelMenuItems = { ...this.panelMenuItems, ...newPanelMenu };
-          this.currentMenuPanelItem = newPanelMenu[this.currentTab][0].key;
-          this.activeMenuElement = this.panelMenuItems[
-            this.currentMenuPanelItem
-          ] as unknown as PageItem;
-          if (this.editor)
-            this.editor.commands.setContent(this.activeMenuElement.editor);
-        });
+      if (this.dataLoader && this.editor) {
+        this.currentTab = this.dataLoader.newSection();
+        this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
+        this.currentMenuPanelItem = this.activeMenuElement.key;
+        this.editor.commands.setContent(this.activeMenuElement.editor);
+      }
     },
     async addMenuElement(): Promise<void> {
       if (!this.panelMenuItems[this.currentTab]) {
@@ -396,33 +374,6 @@ export default defineComponent({
 </style>
 
 <style lang="scss">
-/* Give a remote user a caret */
-.collaboration-cursor__caret {
-  position: relative;
-  margin-left: -1px;
-  margin-right: -1px;
-  border-left: 1px solid #0d0d0d;
-  border-right: 1px solid #0d0d0d;
-  word-break: normal;
-  pointer-events: none;
-}
-
-/* Render the username above the caret */
-.collaboration-cursor__label {
-  position: absolute;
-  top: -1.4em;
-  left: -1px;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: normal;
-  user-select: none;
-  color: #0d0d0d;
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px 3px 3px 0;
-  white-space: nowrap;
-}
-
 .ProseMirror {
   min-height: 400px;
 }
