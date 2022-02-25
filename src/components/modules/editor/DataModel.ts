@@ -331,6 +331,15 @@ export function getPageText(thing: ThingPersisted): string {
   return "{}";
 }
 
+export function getPosition(thing: ThingPersisted): string {
+  console.log("this is thing", thing);
+  const predicates = getPredicate(thing, SCHEMA.position);
+  console.log("this is predicates", predicates);
+  if (Array.isArray(predicates) && predicates.length > 0) return predicates[0];
+  if (typeof predicates === "string") return predicates;
+  throw new Error("Impossible option has been reached");
+}
+
 export function getTitle(thing: ThingPersisted): string {
   const titlePredicates = getPredicate(thing, DCTERMS.title);
   if (Array.isArray(titlePredicates) && titlePredicates.length > 0)
