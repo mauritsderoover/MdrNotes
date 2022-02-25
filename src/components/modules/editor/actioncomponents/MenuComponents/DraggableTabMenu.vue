@@ -9,7 +9,7 @@
         direction="vertical"
         class="p-tabmenu-nav"
         @start="drag = true"
-        @end="drag = false"
+        @end="processDragEnd"
       >
         <template #item="{ element, index }">
           <div
@@ -135,13 +135,13 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ["update:activeIndex", "tab-change", "add-tab", "label-changed"],
+  emits: ["update:activeIndex", "tab-change", "add-tab", "label-changed", "drag-ended"],
   data(): DraggableTabMenu {
     return {
       d_activeIndex: this.activeIndex,
       doubleClickActiveIndex: undefined,
       activeItem: undefined,
-      draggable: false,
+      drag: false,
       delay: 160,
       clicks: 0,
       timer: undefined,
@@ -287,6 +287,10 @@ export default defineComponent({
     },
     testFunction(event: any) {
       console.log("the testFunction has been reached", event);
+    },
+    processDragEnd(): void {
+      this.drag = false;
+      this.$emit("drag-ended");
     },
     isDoubleClickedItem(item: any) {
       return compareObject(item, this.doubleClickedItem);

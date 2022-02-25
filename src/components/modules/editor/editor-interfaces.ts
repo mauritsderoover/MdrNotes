@@ -59,7 +59,7 @@ export interface DraggableTabMenu {
   d_activeIndex: number | undefined;
   doubleClickActiveIndex: number | undefined;
   activeItem: BaseItem | undefined;
-  draggable: boolean;
+  drag: boolean;
   delay: number;
   clicks: number;
   timer: ReturnType<typeof setTimeout> | undefined;

@@ -7,7 +7,7 @@
       :disabled="false"
       :group="{ name: 'g1' }"
       @start="drag = true"
-      @end="drag = false"
+      @end="processDragEnd"
     >
       <template #item="{ element, index }">
         <div
@@ -171,6 +171,7 @@ export default defineComponent({
     "tab-change",
     "add-menu-element",
     "label-changed",
+    "dragEnded",
   ],
   data(): DraggablePanelMenu {
     return {
@@ -387,6 +388,10 @@ export default defineComponent({
     },
     isDoubleClickedItem(item: any) {
       return compareObject(item, this.doubleClickedItem);
+    },
+    processDragEnd(): void {
+      this.drag = false;
+      this.$emit("dragEnded");
     },
     getHeaderClass(item: any) {
       if (this.submenu) {
