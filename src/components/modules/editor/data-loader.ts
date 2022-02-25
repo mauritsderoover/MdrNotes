@@ -66,16 +66,6 @@ export default class DataLoader {
     }
   }
 
-  async loadAllThings(): Promise<void> {
-    const requests: Promise<ThingPersisted>[] = [];
-    for (const resourceUrl of this.resourceUrls) {
-      requests.push(getThingFromSolidPod(resourceUrl));
-    }
-    Promise.all(requests).then((results) => {
-      results.map((request) => (this.things[request.url] = request));
-    });
-  }
-
   loadData(): void {
     console.log("this is panelMenuItems", this.panelMenuItems);
     console.log("this is tabItems", this.tabItems);
