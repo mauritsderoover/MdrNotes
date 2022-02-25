@@ -13,6 +13,7 @@
 
 <script lang="js">
 import MenuItem from "./MenuItem.vue";
+import { Editor } from "@tiptap/vue-3";
 
 export default {
   components: {
@@ -21,7 +22,7 @@ export default {
 
   props: {
     editor: {
-      type: Object,
+      type: Editor,
       required: true,
     },
   },
@@ -41,6 +42,33 @@ export default {
           action: () => this.editor.chain().focus().toggleItalic().run(),
           isActive: () => this.editor.isActive("italic"),
         },
+        {
+          icon: "align-left",
+          title: "Align left",
+          action: () => this.editor.chain().focus().setTextAlign("left").run(),
+          isActive: () => this.editor.isActive({ textAlign: "left" }),
+        },
+        {
+          icon: "align-center",
+          title: "Align center",
+          action: () =>
+            this.editor.chain().focus().setTextAlign("center").run(),
+          isActive: () => this.editor.isActive({ textAlign: "center" }),
+        },
+        {
+          icon: "align-right",
+          title: "Align right",
+          action: () => this.editor.chain().focus().setTextAlign("right").run(),
+          isActive: () => this.editor.isActive({ textAlign: "right" }),
+        },
+        {
+          icon: "align-justify",
+          title: "Align justify",
+          action: () =>
+            this.editor.chain().focus().setTextAlign("justify").run(),
+          isActive: () => this.editor.isActive({ textAlign: "justify" }),
+        },
+
         {
           icon: "strikethrough",
           title: "Strike",
