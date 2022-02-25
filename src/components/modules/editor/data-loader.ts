@@ -1,5 +1,11 @@
 import {
+  buildThing,
+  createSolidDataset,
+  createThing,
   getContainedResourceUrlAll,
+  getThing,
+  saveSolidDatasetAt,
+  setThing,
   SolidDataset,
   Thing,
   ThingPersisted,
@@ -7,22 +13,23 @@ import {
 } from "@inrupt/solid-client";
 import { getData } from "@/components/genericcomponents/utils/utils";
 import {
-  createPage,
   getEditorContent,
   getNoteBook,
   getPageText,
   getPageUrls,
+  getPosition,
   getSectionUrls,
   getThingFromSolidPod,
   getTitle,
   hasPage,
   hasPages,
+  hasSection,
   isNoteBook,
   isPage,
   isPageGroup,
   isSection,
   isSectionGroup,
-  linkPage,
+  makeId,
   retrieveIdentifier,
 } from "@/components/modules/editor/DataModel";
 import {
@@ -30,6 +37,11 @@ import {
   TabItems,
 } from "@/components/modules/editor/editor-interfaces";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
+import { DCTERMS, RDF } from "@inrupt/vocab-common-rdf";
+import { fetch } from "@inrupt/solid-client-authn-browser";
+import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
+import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
+import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 
 export default class DataLoader {
   rootDataSet?: SolidDataset & WithResourceInfo;
@@ -38,6 +50,8 @@ export default class DataLoader {
   rootUrl: string;
   panelMenuItems: PanelMenuItems;
   tabItems: TabItems;
+  notebook?: string;
+  dataSynchronizer: DataSynchronizer;
 
   constructor(
     rootUrl: string,
