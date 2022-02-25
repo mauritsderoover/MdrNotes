@@ -9,8 +9,10 @@ import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import {
   isPage,
+  isSection,
   retrieveIdentifier,
 } from "@/components/modules/editor/DataModel";
+import { DCTERMS } from "@inrupt/vocab-common-rdf";
 
 export default class DataSynchronizer {
   rootUrl: string;
@@ -32,6 +34,50 @@ export default class DataSynchronizer {
       this.activeSync[pageUrl] = true;
       this.savePageContent(pageUrl);
     }
+  }
+
+  saveTitle(identifier: string, newTitle: string): void {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    getData(URL).then(async (dataSet) => {
+      if (dataSet) {
+        let thing = getThing(dataSet, URL);
+        if (!thing) throw new Error("No thing could be retrieved");
+        if (isPage(thing) || isSection(thing)) {
+          thing = buildThing(thing)
+            .setStringNoLocale(DCTERMS.title, newTitle)
+            .build();
+          await saveSolidDatasetAt(URL, setThing(dataSet, thing), {
+            fetch,
+          });
+        } else {
+          throw new Error("Thing is not a page or a section");
+        }
+      }
+    });
+  }
+
+  savePosition(identifier: string, position: number): void {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    getData(URL).then(async (dataset) => {
+      if (dataset) {
+        let thing = getThing(dataset, URL);
+        if (!thing) throw new Error("No thing could be retrieved");
+        if (isPage(thing) || isSection(thing)) {
+          thing = buildThing(thing)
+            .setInteger(SCHEMA.position, position)
+            .build();
+          await saveSolidDatasetAt(URL, setThing(dataset, thing), {
+            fetch,
+          });
+        } else {
+          throw new Error("Thing is not a page or a section");
+        }
+      }
+    });
   }
 
   savePageContent(pageIdentifier: string): void {
