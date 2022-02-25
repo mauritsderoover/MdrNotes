@@ -169,7 +169,7 @@ export default class DataLoader {
       this.panelMenuItems[retrieveIdentifier(sectionUrl)].push(
         new PageItem({
           key: pageIdentifier,
-          url: `${this.rootUrl} + ${pageIdentifier}`,
+          url: `${this.rootUrl}${pageIdentifier}`,
           label: "SomeRandomPage",
           editor: "",
         })
