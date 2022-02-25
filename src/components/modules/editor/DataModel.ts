@@ -365,9 +365,9 @@ type DataTypeIriString = XmlSchemaTypeIri | string;
 export function processLiterals(
   literals: Readonly<Record<DataTypeIriString, readonly string[]>>
 ): readonly string[] | undefined {
-  return literals[xmlSchemaTypes.string]
-    ? literals[xmlSchemaTypes.string]
-    : undefined;
+  if (literals[xmlSchemaTypes.string]) return literals[xmlSchemaTypes.string];
+  if (literals[xmlSchemaTypes.integer]) return literals[xmlSchemaTypes.integer];
+  return undefined;
 }
 
 /**
