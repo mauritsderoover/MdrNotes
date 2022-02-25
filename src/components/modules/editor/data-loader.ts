@@ -101,6 +101,22 @@ export default class DataLoader {
     }
   }
 
+  saveAllPositions(): void {
+    for (const tabPosition in this.tabItems) {
+      this.dataSynchronizer.savePosition(
+        this.tabItems[tabPosition].key,
+        Number(tabPosition)
+      );
+      const menuItems = this.panelMenuItems[this.tabItems[tabPosition].key];
+      for (const pagePosition in menuItems) {
+        this.dataSynchronizer.savePosition(
+          menuItems[pagePosition].key,
+          Number(pagePosition)
+        );
+      }
+    }
+  }
+
   /**
    * Sections can contain pages and page groups but currently only pages are supported
    * @param sectionUrl
