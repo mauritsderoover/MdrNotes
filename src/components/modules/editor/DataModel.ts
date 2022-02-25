@@ -534,7 +534,7 @@ async function createNoteBook(title: string): Promise<string> {
 /**
  * A saction can be linked to a notebook or a sectiongroup
  */
-enum hasSection {
+export enum hasSection {
   NOTEBOOK,
   SECTIONGROUP,
 }
@@ -597,7 +597,7 @@ async function createSection(title: string): Promise<string> {
   return await createNoteTakingElement(title, NOTETAKING.Section);
 }
 
-function makeId(length = 28): string {
+export function makeId(length = 28): string {
   let result = "";
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
