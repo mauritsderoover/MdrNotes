@@ -19,7 +19,7 @@ export interface BaseItem {
   to?: string;
 }
 
-type Section = BaseItem;
+export type Section = BaseItem;
 
 /**
  * @alias: A PanelMenuItem is an alias for a page and a page-group
