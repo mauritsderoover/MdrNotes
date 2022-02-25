@@ -137,7 +137,11 @@ export default class DataLoader {
    */
   async processSection(sectionUrl: string): Promise<void> {
     const sectionThing = await getThingFromSolidPod(sectionUrl);
-    this.tabItems.push(
+    const position = getPosition(sectionThing);
+
+    this.tabItems.splice(
+      Number(position),
+      0,
       new TabItem({
         key: retrieveIdentifier(sectionUrl),
         label: getTitle(sectionThing),
