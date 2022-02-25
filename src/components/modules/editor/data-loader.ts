@@ -63,6 +63,7 @@ export default class DataLoader {
     this.tabItems = tabItems;
     this.resourceUrls = [];
     this.rootUrl = rootUrl;
+    this.dataSynchronizer = new DataSynchronizer(this.rootUrl);
     this.getRootDataSet().then(() => this.getAllContainedUrls());
   }
 
@@ -109,6 +110,8 @@ export default class DataLoader {
    * We also only support one notebook currently but this can be increased in the future
    */
   processNoteBook(thing: Thing): void {
+    this.notebook = thing.url;
+    console.log("this is notebook in data-loader", this.notebook);
     const sectionUrls = getSectionUrls(thing);
     for (const section of sectionUrls) {
       this.processSection(section).then();
@@ -155,12 +158,14 @@ export default class DataLoader {
         this.processPage(page, retrieveIdentifier(sectionUrl));
       }
     } else {
-      const pageIdentifier = await createPage("SomeRandomPage");
-      await linkPage(
-        hasPage.SECTION,
-        pageIdentifier,
-        retrieveIdentifier(sectionUrl)
-      );
+      const pageIdentifier = makeId();
+      this.createPage(pageIdentifier, "SomeRandomPage", 0).then(() => {
+        this.linkPage(
+          hasPage.SECTION,
+          pageIdentifier,
+          retrieveIdentifier(sectionUrl)
+        );
+      });
       this.panelMenuItems[retrieveIdentifier(sectionUrl)].push(
         new PageItem({
           key: pageIdentifier,
@@ -183,5 +188,254 @@ export default class DataLoader {
         })
       );
     });
+  }
+
+  async createNoteTakingElement(
+    identifier: string,
+    title: string,
+    URI: string,
+    position?: number
+  ): Promise<void> {
+    const url = `${this.rootUrl}${identifier}`;
+    const thing = buildThing(createThing({ url: url }))
+      .addUrl(RDF.type, URI)
+      .addStringNoLocale(DCTERMS.title, title);
+
+    if (position !== undefined) thing.addInteger(SCHEMA.position, position);
+
+    await saveSolidDatasetAt(
+      url,
+      setThing(createSolidDataset(), thing.build()),
+      {
+        fetch,
+      }
+    );
+  }
+
+  newSection(): string {
+    if (this.notebook) {
+      const sectionIdentifier = makeId();
+      const pageIdentifier = makeId();
+
+      this.createSection(
+        sectionIdentifier,
+        "New Section",
+        this.tabItems.length
+      ).then(() => {
+        if (this.notebook)
+          this.linkSection(
+            hasSection.NOTEBOOK,
+            sectionIdentifier,
+            retrieveIdentifier(this.notebook)
+          ).then();
+        this.createPage(pageIdentifier, "New Page", 0).then(() => {
+          this.linkPage(
+            hasPage.SECTION,
+            pageIdentifier,
+            sectionIdentifier
+          ).then();
+        });
+      });
+      this.tabItems.push(
+        new TabItem({
+          label: "Untitled",
+          url: this.rootUrl + sectionIdentifier,
+          key: sectionIdentifier,
+        })
+      );
+      this.panelMenuItems[sectionIdentifier] = [
+        new PageItem({
+          label: "New Page",
+          url: this.rootUrl + pageIdentifier,
+          key: pageIdentifier,
+          editor: "",
+        }),
+      ];
+      return sectionIdentifier;
+    }
+    throw new Error("A notebook has not yet been identifier");
+  }
+
+  newPage(sectionIdentifier: string): void {
+    const pageIdentifier = makeId();
+    this.createPage(
+      pageIdentifier,
+      "New Page",
+      this.panelMenuItems[sectionIdentifier].length
+    ).then(() => {
+      this.linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier).then();
+    });
+    this.panelMenuItems[sectionIdentifier].push(
+      new PageItem({
+        label: "New Page",
+        url: this.rootUrl + pageIdentifier,
+        key: pageIdentifier,
+        editor: "",
+      })
+    );
+  }
+
+  /**
+   * A section can be added to either a notebook or a section group
+   * @param target: determines whether a section is added to a notebook or section group
+   * @param sectionIdentifier: the section that is being linked
+   * @param targetIdentifier: the target that is being linked
+   */
+  async linkSection(
+    target: hasSection,
+    sectionIdentifier: string,
+    targetIdentifier: string
+  ) {
+    const sectionURL = `${this.rootUrl}${sectionIdentifier}`;
+    const targetURL = `${this.rootUrl}${targetIdentifier}`;
+    console.log("this is sectionURL", sectionURL);
+    console.log("this is targetUrl", targetURL);
+    const sectionDataset = await getData(sectionURL);
+    const targetDataset = await getData(targetURL);
+    if (sectionDataset) {
+      let thing = getThing(sectionDataset, sectionURL);
+      if (thing) {
+        if (target === hasSection.NOTEBOOK) {
+          thing = buildThing(thing)
+            .addUrl(NOTETAKING.partOfNoteBook, targetURL)
+            .build();
+          await saveSolidDatasetAt(
+            sectionURL,
+            setThing(sectionDataset, thing),
+            {
+              fetch,
+            }
+          );
+        } else if (target === hasSection.SECTIONGROUP) {
+          thing = buildThing(thing)
+            .addUrl(NOTETAKING.partOfSectionGroup, targetURL)
+            .build();
+          await saveSolidDatasetAt(
+            sectionURL,
+            setThing(sectionDataset, thing),
+            {
+              fetch,
+            }
+          );
+        }
+      }
+    }
+
+    if (targetDataset) {
+      let thing = getThing(targetDataset, targetURL);
+      if (thing) {
+        thing = buildThing(thing)
+          .addUrl(NOTETAKING.hasSection, sectionURL)
+          .build();
+        await saveSolidDatasetAt(targetURL, setThing(targetDataset, thing), {
+          fetch,
+        });
+      }
+    }
+  }
+
+  async linkPage(
+    target: hasPage,
+    pageIdentifier: string,
+    targetIdentifier: string
+  ) {
+    console.log("this has been called in linkPage");
+    const pageURL = `${this.rootUrl}${pageIdentifier}`;
+    const targetURL = `${this.rootUrl}${targetIdentifier}`;
+    const dataset = await getData(pageURL);
+    const targetDataset = await getData(targetURL);
+    if (dataset) {
+      let thing = getThing(dataset, pageURL);
+      if (thing) {
+        if (target === hasPage.SECTION) {
+          thing = buildThing(thing)
+            .addUrl(NOTETAKING.partOfSection, targetURL)
+            .build();
+          await saveSolidDatasetAt(pageURL, setThing(dataset, thing), {
+            fetch,
+          });
+        } else if (target === hasPage.PAGE_GROUP) {
+          thing = buildThing(thing)
+            .addUrl(NOTETAKING.partOfPageGroup, targetURL)
+            .build();
+          await saveSolidDatasetAt(pageURL, setThing(dataset, thing), {
+            fetch,
+          });
+        }
+      }
+    }
+
+    if (targetDataset) {
+      let thing = getThing(targetDataset, targetURL);
+      if (thing) {
+        thing = buildThing(thing).addUrl(NOTETAKING.hasPage, pageURL).build();
+        await saveSolidDatasetAt(targetURL, setThing(targetDataset, thing), {
+          fetch,
+        });
+      }
+    }
+  }
+
+  async createSection(
+    sectionIdentifier: string,
+    title: string,
+    position: number
+  ): Promise<void> {
+    await this.createNoteTakingElement(
+      sectionIdentifier,
+      title,
+      NOTETAKING.Section,
+      position
+    );
+  }
+
+  async createPage(
+    pageIdentifier: string,
+    title: string,
+    position: number
+  ): Promise<void> {
+    await this.createNoteTakingElement(
+      pageIdentifier,
+      title,
+      NOTETAKING.Note,
+      position
+    );
+  }
+
+  async createSectionGroup(
+    sectionGroupIdentifier: string,
+    title: string,
+    position: number
+  ): Promise<void> {
+    await this.createNoteTakingElement(
+      sectionGroupIdentifier,
+      title,
+      NOTETAKING.SectionGroup,
+      position
+    );
+  }
+
+  async createPageGroup(
+    pageGroupIdentifier: string,
+    title: string,
+    position: number
+  ): Promise<void> {
+    await this.createNoteTakingElement(
+      pageGroupIdentifier,
+      title,
+      NOTETAKING.PageGroup,
+      position
+    );
+  }
+
+  async createNoteBook(
+    notebookIdentifier: string,
+    title: string
+  ): Promise<void> {
+    await this.createNoteTakingElement(
+      notebookIdentifier,
+      title,
+      NOTETAKING.NoteBook
+    );
   }
 }
