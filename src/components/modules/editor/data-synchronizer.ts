@@ -58,6 +58,52 @@ export default class DataSynchronizer {
     });
   }
 
+  removeNoteFromSection(
+    pageIdentifier: string,
+    sectionIdentifier: string
+  ): void {
+    const sectionURL = this.getURL(sectionIdentifier);
+    getData(sectionURL).then(async (dataset) => {
+      if (dataset) {
+        let thing = getThing(dataset, sectionURL);
+        if (!thing) throw new Error("No thing could be retrieved");
+        thing = buildThing(thing)
+          .removeUrl(NOTETAKING.hasPage, this.getURL(pageIdentifier))
+          .build();
+        await saveSolidDatasetAt(sectionURL, setThing(dataset, thing), {
+          fetch,
+        });
+      }
+    });
+  }
+
+  removeSectionFromNoteBook(
+    sectionIdentifier: string,
+    notebookIdentifier: string
+  ): void {
+    const notebookURL = this.getURL(notebookIdentifier);
+    getData(notebookURL).then(async (dataset) => {
+      if (dataset) {
+        let thing = getThing(dataset, notebookURL);
+
+        if (!thing) throw new Error("No thing could be retrieved");
+        thing = buildThing(thing)
+          .removeUrl(NOTETAKING.hasSection, this.getURL(sectionIdentifier))
+          .build();
+        await saveSolidDatasetAt(notebookURL, setThing(dataset, thing), {
+          fetch,
+        });
+      }
+    });
+  }
+
+  getURL(identifier: string): string {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    return URL;
+  }
+
   savePosition(identifier: string, position: number): void {
     let URL = this.rootUrl;
     if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
