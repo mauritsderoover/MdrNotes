@@ -126,6 +126,13 @@ export default class DataSynchronizer {
     });
   }
 
+  deleteNoteResource(identifier: string): void {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    deleteSolidDataset(URL, { fetch }).then(() => console.log("tob e done"));
+  }
+
   savePageContent(pageIdentifier: string): void {
     const content = this.changes[pageIdentifier].shift();
     let URL = this.rootUrl;
