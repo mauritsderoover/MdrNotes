@@ -48,7 +48,7 @@ export default defineComponent({
         if (!getDefaultSession().info.isLoggedIn) {
           login({
             oidcIssuer: this.issuers[issuer],
-            redirectUrl: "http://localhost:8080/",
+            redirectUrl: "http://mdr-tools.com/",
           }).then(() => {
             this.setLoginInformation(getDefaultSession().info);
           });
