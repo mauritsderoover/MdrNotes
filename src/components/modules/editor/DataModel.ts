@@ -63,7 +63,6 @@ export const xmlSchemaTypes = {
 } as const;
 
 export async function loadData(): Promise<[string, TabItems, PanelMenuItems]> {
-  console.log("loadData has been started", new Date());
   const rootDataSet = await getData(ROOT_URL);
   const urls = rootDataSet
     ? getContainedResourceUrlAll(rootDataSet)
@@ -74,7 +73,6 @@ export async function loadData(): Promise<[string, TabItems, PanelMenuItems]> {
 
   if (thing) {
     const toBeReturned = await processThing(thing);
-    console.log("loadData is done", new Date());
     return toBeReturned;
   }
   throw new Error("No thing was found");
@@ -117,8 +115,6 @@ export async function savePageContent(
   if (pageIdentifier.includes("http"))
     URL = URL + retrieveIdentifier(pageIdentifier);
   else URL = URL + pageIdentifier;
-  console.log("this is URL", URL);
-  console.log("this is the pageIdentifier", pageIdentifier);
   const dataSet = await getData(URL);
   if (dataSet) {
     let thing = getThing(dataSet, URL);
@@ -332,9 +328,7 @@ export function getPageText(thing: ThingPersisted): string {
 }
 
 export function getPosition(thing: ThingPersisted): string {
-  console.log("this is thing", thing);
   const predicates = getPredicate(thing, SCHEMA.position);
-  console.log("this is predicates", predicates);
   if (Array.isArray(predicates) && predicates.length > 0) return predicates[0];
   if (typeof predicates === "string") return predicates;
   throw new Error("Impossible option has been reached");
