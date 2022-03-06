@@ -133,9 +133,9 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
-    initial_data: {
+    newTab: {
       type: Boolean,
-      default: true,
+      default: false,
       required: true,
     },
   },
@@ -188,8 +188,7 @@ export default defineComponent({
   },
   watch: {
     "model.length"() {
-      console.log("this has been called!");
-      if (this.initial_data) {
+      if (this.newTab) {
         this.changeLabel = false;
         this.activeItem = undefined;
         this.doubleClickedItem = undefined;
