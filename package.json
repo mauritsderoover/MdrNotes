@@ -24,7 +24,6 @@
     "primeicons": "^5.0.0",
     "primevue": "^3.12.0",
     "register-service-worker": "^1.7.2",
-    "solid-auth-fetcher": "^1.5.3",
     "vue": "^3.2.31",
     "vue-router": "^4.0.12",
     "vuedraggable": "^4.1.0",
