@@ -213,7 +213,7 @@ async function processSection(sectionUrl: string): Promise<PanelMenuItem[]> {
 }
 
 export function getPageUrls(thing: ThingPersisted): string[] {
-  return getThingUrls(thing, NOTETAKING.hasPage);
+  return getThingUrls(thing, NOTETAKING.hasPage) as string[];
 }
 
 export async function getThingFromSolidPod(
@@ -228,14 +228,22 @@ export async function getThingFromSolidPod(
   throw new Error("No dataset could be retrieved");
 }
 
-export function getThingUrls(thing: ThingPersisted, predicate: VocabTerm) {
+export function getThingUrls(
+  thing: ThingPersisted,
+  predicate: VocabTerm
+): string | string[] {
   const urls = getPredicate(thing, (predicate as VocabTerm).iri.value);
   if (Array.isArray(urls)) return urls;
-  throw new Error("SectionUrls must be an array");
+  if (typeof urls === "string") return urls;
+  throw new Error("Urls must be an array or a string");
 }
 
 export function getSectionUrls(thing: ThingPersisted): string[] {
-  return getThingUrls(thing, NOTETAKING.hasSection);
+  return getThingUrls(thing, NOTETAKING.hasSection) as string[];
+}
+
+export function getSectionUrlFromNote(thing: ThingPersisted): string {
+  return getThingUrls(thing, NOTETAKING.partOfSection) as string;
 }
 
 export async function getNoteBook(thing: Thing): Promise<Thing> {
