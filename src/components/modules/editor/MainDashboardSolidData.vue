@@ -1,48 +1,38 @@
 <template>
+  <Button @click="cleanNotesContainer" label="Clean NotesContainer" />
   <div class="grid nested-grid">
     <div class="col-12">
-      <Button
-        label="Create notebook"
-        icon="pi pi-check"
-        class="p-button-help"
-        @click="createNotebook"
-      />
-      <Button
-        label="saveSomeContent"
-        icon="pi pi-check"
-        class="p-button-help"
-        @click="loadDataTester"
-      />
-      <Button
-        label="Delete root container"
-        icon="pi pi-check"
-        class="p-button-help"
-        @click="deleteRootContainer"
-      />
+      <div class="grid">
+        <div class="col-11">
+          <menu-bar v-if="editor" class="editor__header" :editor="editor" />
+        </div>
+        <div class="col-1"><Button label="Logout" @click="logUserOut" /></div>
+      </div>
     </div>
     <div class="col-12">
-      <menu-bar v-if="editor" class="editor__header" :editor="editor" />
-    </div>
-    <div class="col-12">
-      <DraggableTabMenu
+      <draggable-tab-menu
         v-model:activeIndex="activeIndex"
         :model="tabItems"
-        :initial_data="initial_tabs"
+        :new-tab="newTab"
         @tab-change="updateCurrentTab"
         @add-tab="addTab"
         @label-changed="labelChange"
+        @drag-ended="saveAllPositions"
+        @delete-item="deleteSection"
       />
     </div>
     <div class="col-12">
       <div class="grid">
         <div class="col-2">
-          <DraggablePanelMenu
+          <draggable-panel-menu
             :model="panelMenuItems[currentTab]"
             :section-identifier="currentTab"
             layer="mainItem"
             @tab-change="updateMenuItem"
             @add-menu-element="addMenuElement"
             @label-changed="labelChange"
+            @drag-ended="saveAllPositions"
+            @delete-item="deletePageNote"
           />
         </div>
         <div class="col-10">
@@ -61,50 +51,28 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Highlight from "@tiptap/extension-highlight";
 import CharacterCount from "@tiptap/extension-character-count";
+import TextAlign from "@tiptap/extension-text-align";
 import MenuBar from "../../modules/editor/actioncomponents/EditorComponents/MenuBar.vue";
 import Button from "primevue/button";
 import {
   containerExists,
-  // deleteContainerContents,
-  // createContainerAtUri,
   deleteContainerContents,
 } from "@/components/genericcomponents/utils/utils";
 import DraggableTabMenu from "../../modules/editor/actioncomponents/MenuComponents/DraggableTabMenu.vue";
-// import Toolbar from "../../modules/editor/actioncomponents/EditorComponents/Toolbar.vue";
 import DraggablePanelMenu from "../../modules/editor/actioncomponents/MenuComponents/DraggablePanelMenu.vue";
 import {
-  buildThing,
-  createThing,
-  createSolidDataset,
-  setThing,
-  saveSolidDatasetAt,
-} from "@inrupt/solid-client";
-import SCHEMA from "../../genericcomponents/vocabs/SCHEMA";
-import NOTETAKING from "../../genericcomponents/vocabs/NOTETAKING";
-import {
-  BaseItem,
   MainDashBoardInterface,
+  Section,
 } from "@/components/modules/editor/editor-interfaces";
-import { fetch } from "@inrupt/solid-client-authn-browser";
-import { DCTERMS, RDF } from "@inrupt/vocab-common-rdf";
-import {
-  loadData,
-  newNoteBook,
-  newPage,
-  newSection,
-  savePageContent,
-  saveTitle,
-} from "@/components/modules/editor/DataModel";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
 import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
-// import DataLoader from "@/components/modules/editor/dataloader";
+import DataLoader from "@/components/modules/editor/data-loader";
+import { logout } from "@inrupt/solid-client-authn-browser";
 
-// import { LDP } from "@inrupt/vocab-common-rdf";
 export default defineComponent({
   name: "MainDashboard",
   components: {
     DraggablePanelMenu,
-    // Toolbar,
     MenuBar,
     EditorContent,
     DraggableTabMenu,
@@ -112,7 +80,7 @@ export default defineComponent({
   },
   data(): MainDashBoardInterface {
     return {
-      initial_tabs: true,
+      newTab: false,
       tabItems: [],
       panelMenuItems: {},
       currentTab: "",
@@ -124,27 +92,27 @@ export default defineComponent({
       editor: undefined,
       activeMenuElement: undefined,
       notebook: undefined,
-      synchronizer: new DataSynchronizer(
-        "https://mauritsderoover.solidcommunity.net/notes/"
-      ),
+      synchronizer: new DataSynchronizer(),
+      dataLoader: undefined,
     };
   },
-  async beforeMount() {
-    const URI = `${this.$store.getters.getOrigin}/notes/`;
-    // await deleteContainerContents(URI);
-    if (await containerExists(URI)) {
-      // new DataLoader("https://mauritsderoover.solidcommunity.net/notes/");
-      await this.loadData();
-    } else {
-      await this.createInitialNotes();
-    }
+  beforeMount() {
+    this.dataLoader = new DataLoader(this.panelMenuItems, this.tabItems);
+    // this.tabItems = this.dataLoader.tabItems;
+    this.dataLoader.initialDataLoadedChecker().then(() => {
+      console.log("this is currentTab", this.tabItems);
+      this.currentTab = this.tabItems[0].key;
+      this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
+      this.currentMenuPanelItem = this.activeMenuElement.key;
+      if (this.editor) {
+        this.editor.commands.setContent(this.activeMenuElement.editor);
+      }
+    });
   },
   beforeUnmount() {
     if (this.editor) this.editor.destroy();
   },
   mounted() {
-    console.log("this is this.$refs.editor", this.$refs.editor);
-    console.log("this is the editor", this.editor);
     this.editor = new Editor({
       injectCSS: false,
       autofocus: true,
@@ -158,6 +126,7 @@ export default defineComponent({
         CharacterCount.configure({
           limit: 10000,
         }),
+        TextAlign.configure({ types: ["heading", "paragraph"] }),
       ],
     });
     if (this.editor) {
@@ -178,92 +147,37 @@ export default defineComponent({
     }
   },
   methods: {
-    /**
-     * Some basic information about the structure
-     * Since in the SOLID mindset URLS shouldn't change, all notes will be creates in the main
-     * notes container. However, there is still a need to clarify where a specific note belongs to.
-     *
-     * Therefore, a note will always be both container as NoteDigitalDocument resource.
-     * On top of the container predicates. The container will always contain the following predicates
-     * rdf.type, SCHEMA.NoteDigitalDocument
-     * DCTERMS.title, "Some Random Title" (A string literal)
-     * SCHEMA.abstract, "Personal notes" (A string literal)
-     * SCHEMA.accountablePerson, WebId
-     * SCHEMA.creator, WebId
-     * SCHEMA.dateCreated, date
-     * SCHEMA.Text, ""
-     * (optional) SCHEMA.hasPart, URL  *OrANd* DCTERM.hasPart, URL
-     * (optional) SCHEMA.isPartOf, URL *OrAnd* DCTERM.isPartOf, URL
-     * (optional) SCHEMA.position, integer => this is required if a note container isPartOf another note container
-     * */
-    createRootContainer() {
-      DCTERMS.hasFormat;
-      const uri = "https://mauritsderoover.solidcommunity.net/testerRoot/notes";
-      let solidDataSet = createSolidDataset();
-      const newThing = buildThing(createThing({ url: uri }))
-        .addUrl(RDF.type, SCHEMA.NoteDigitalDocument)
-        .addStringNoLocale(DCTERMS.title, "testerRootTitle")
-        .build();
-      solidDataSet = setThing(solidDataSet, newThing);
-      saveSolidDatasetAt(uri, solidDataSet, { fetch });
+    saveAllPositions(): void {
+      if (this.dataLoader) this.dataLoader.saveAllPositions();
     },
-    loadDataTester() {
-      savePageContent(
-        "020A5eE5SBMEtY9jicbM7atqUbqF",
-        "Tester content antoher content"
-      ).then(() => {
-        console.log("content should have been saved");
-      });
+    cleanNotesContainer(): void {
+      deleteContainerContents(
+        "https://mauritsderoover.solidcommunity.net/notes/"
+      );
+      // if (this.dataLoader) this.dataLoader.cleanNotesContainer();
     },
-    createNotebook() {
-      console.log("this has been called! ");
-      newNoteBook("TesterNotebook").then(() => {
-        console.log("this seems to have worked");
-      });
+    deletePageNote(item: PageItem) {
+      console.log("this has been reached with pageItem", item);
+      if (this.dataLoader)
+        this.dataLoader.deleteNotePage(this.currentTab, item);
     },
-    async addSomethingToContainer() {
-      const uri =
-        "https://mauritsderoover.solidcommunity.net/testerRoot/testerYolo";
-      // let solidDataset = await getData(uri);
-
-      let newDataSet = createSolidDataset();
-
-      const newThing = buildThing(createThing({ url: uri }))
-        .addUrl(RDF.type, NOTETAKING.Note)
-        .build();
-
-      newDataSet = setThing(newDataSet, newThing);
-
-      await saveSolidDatasetAt(uri, newDataSet, { fetch });
-    },
-    deleteRootContainer() {
-      const uri = "https://mauritsderoover.solidcommunity.net/notes/";
-      deleteContainerContents(uri);
-      // TODO
-    },
-    changeTitle() {
-      console.log("this is blabla");
-    },
-    labelChange(event: { activeIndex: number; doubleClickedItem: TabItem }) {
-      saveTitle(event.doubleClickedItem.key, event.doubleClickedItem.label);
-    },
-    createInitialNotes() {
-      newNoteBook("Your First Notebook").then(() => {
-        this.loadData();
-      });
-    },
-    async loadData() {
-      this.initial_tabs = true;
-      [this.notebook, this.tabItems, this.panelMenuItems] = await loadData();
-      // for every tab we get the related dataset
-      this.currentTab = this.tabItems[0].key;
-      this.currentMenuPanelItem = this.panelMenuItems[this.currentTab][0].key;
+    deleteSection(item: Section) {
+      console.log("this has been reached in delete Section", item);
+      let index = this.tabItems.findIndex((value) => value.key === item.key);
+      if (this.dataLoader) this.dataLoader.deleteSection(item);
+      if (index > this.tabItems.length - 1) index--;
+      this.currentTab = this.tabItems[index].key;
       this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
-      // this.currentEditor = this.panelMenuItems[this.currentTab][0].key;
+      this.currentMenuPanelItem = this.activeMenuElement.key;
       if (this.editor) {
         this.editor.commands.setContent(this.activeMenuElement.editor);
       }
-      this.initial_tabs = false;
+    },
+    labelChange(event: { activeIndex: number; doubleClickedItem: TabItem }) {
+      this.synchronizer.saveTitle(
+        event.doubleClickedItem.key,
+        event.doubleClickedItem.label
+      );
     },
     // Keep track of active tabs and menu items
     updateCurrentTab(event: { index: number }) {
@@ -278,30 +192,29 @@ export default defineComponent({
         );
     },
     addTab() {
-      if (this.notebook)
-        newSection(this.notebook).then((value) => {
-          const newTabItem = value[0];
-          const newPanelMenu = value[1];
-
-          this.tabItems.push(newTabItem);
-          this.currentTab = newTabItem.key;
-
-          this.panelMenuItems = { ...this.panelMenuItems, ...newPanelMenu };
-          this.currentMenuPanelItem = newPanelMenu[this.currentTab][0].key;
-          this.activeMenuElement = this.panelMenuItems[
-            this.currentMenuPanelItem
-          ] as unknown as PageItem;
-          if (this.editor)
-            this.editor.commands.setContent(this.activeMenuElement.editor);
-        });
-    },
-    async addMenuElement(): Promise<void> {
-      if (!this.panelMenuItems[this.currentTab]) {
-        throw new Error("The key for the panelitems does not exist yet");
+      if (this.dataLoader && this.editor) {
+        this.newTab = true;
+        this.currentTab = this.dataLoader.newSection();
+        this.activeMenuElement = this.panelMenuItems[this.currentTab][0];
+        this.currentMenuPanelItem = this.activeMenuElement.key;
+        this.editor.commands.setContent(this.activeMenuElement.editor);
+        this.newTab = false;
       }
-      this.panelMenuItems[this.currentTab].push(await newPage(this.currentTab));
     },
-
+    addMenuElement(): void {
+      if (this.dataLoader) this.dataLoader.newPage(this.currentTab);
+      this.activeMenuElement = this.panelMenuItems[this.currentTab].at(-1);
+      if (this.activeMenuElement && this.editor) {
+        this.currentMenuPanelItem = this.activeMenuElement.key;
+        this.editor.commands.setContent(this.activeMenuElement.editor);
+      }
+    },
+    logUserOut(): void {
+      logout().then(() => {
+        console.log("this has been called");
+        this.$router.push("/");
+      });
+    },
     createTabUrl(name: string): URL {
       return new URL(`${this.$store.getters.getOrigin}/notes/${name}`);
     },
@@ -408,33 +321,6 @@ export default defineComponent({
 </style>
 
 <style lang="scss">
-/* Give a remote user a caret */
-.collaboration-cursor__caret {
-  position: relative;
-  margin-left: -1px;
-  margin-right: -1px;
-  border-left: 1px solid #0d0d0d;
-  border-right: 1px solid #0d0d0d;
-  word-break: normal;
-  pointer-events: none;
-}
-
-/* Render the username above the caret */
-.collaboration-cursor__label {
-  position: absolute;
-  top: -1.4em;
-  left: -1px;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: normal;
-  user-select: none;
-  color: #0d0d0d;
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px 3px 3px 0;
-  white-space: nowrap;
-}
-
 .ProseMirror {
   min-height: 400px;
 }

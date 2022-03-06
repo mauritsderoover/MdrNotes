@@ -1,6 +1,7 @@
 <template>
   <div class="p-tabmenu p-component">
     <div ref="nav" class="p-tabmenu-nav p-reset" role="tablist">
+      <ContextMenu ref="menu" :model="items" />
       <draggable
         :list="model"
         item-key="key-panel"
@@ -9,7 +10,7 @@
         direction="vertical"
         class="p-tabmenu-nav"
         @start="drag = true"
-        @end="drag = false"
+        @end="processDragEnd"
       >
         <template #item="{ element, index }">
           <div
@@ -50,6 +51,7 @@
                   :aria-controls="ariaId + '_content'"
                   class="p-menuitem-link"
                   @click="catchClickEvent($event, element, index)"
+                  @contextmenu="onImageRightClick($event, element)"
                 >
                   <span
                     v-if="element.icon"
@@ -105,6 +107,7 @@
 import { defineComponent, PropType } from "vue";
 import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
+import ContextMenu from "primevue/contextmenu";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
 import {
   DraggableTabMenu,
@@ -115,6 +118,7 @@ export default defineComponent({
   name: "DraggableTabMenu",
   components: {
     draggable,
+    ContextMenu,
   },
   props: {
     model: {
@@ -129,19 +133,26 @@ export default defineComponent({
       type: Number,
       default: 0,
     },
-    initial_data: {
+    newTab: {
       type: Boolean,
-      default: true,
+      default: false,
       required: true,
     },
   },
-  emits: ["update:activeIndex", "tab-change", "add-tab", "label-changed"],
+  emits: [
+    "update:activeIndex",
+    "tab-change",
+    "add-tab",
+    "label-changed",
+    "drag-ended",
+    "delete-item",
+  ],
   data(): DraggableTabMenu {
     return {
       d_activeIndex: this.activeIndex,
       doubleClickActiveIndex: undefined,
       activeItem: undefined,
-      draggable: false,
+      drag: false,
       delay: 160,
       clicks: 0,
       timer: undefined,
@@ -149,6 +160,25 @@ export default defineComponent({
       currentTarget: null,
       inputItem: undefined,
       doubleClickedItem: undefined,
+      rightClickedItem: undefined,
+      items: [
+        {
+          label: "Add page",
+          icon: "pi pi-fw pi-home",
+        },
+        {
+          label: "Delete page",
+          icon: "pi pi-fw pi-home",
+          command: (event) => {
+            console.log("this is event in delete page", event);
+            this.deleteAction();
+          },
+        },
+        {
+          label: "Add subpage",
+          icon: "pi pi-fw pi-calendar",
+        },
+      ],
     };
   },
   computed: {
@@ -158,8 +188,7 @@ export default defineComponent({
   },
   watch: {
     "model.length"() {
-      console.log("this has been called!");
-      if (this.initial_data) {
+      if (this.newTab) {
         this.changeLabel = false;
         this.activeItem = undefined;
         this.doubleClickedItem = undefined;
@@ -194,6 +223,15 @@ export default defineComponent({
     document.removeEventListener("click", this.onClickOutside);
   },
   methods: {
+    deleteAction(): void {
+      console.log("this is rightClickedItem", this.rightClickedItem);
+      this.$emit("delete-item", this.rightClickedItem);
+    },
+    onImageRightClick(event: any, element: any) {
+      console.log("the function onImageRightClick has been executed");
+      (this.$refs.menu as ContextMenu).show(event);
+      this.rightClickedItem = element;
+    },
     abortLabelChange() {
       this.$emit("label-changed", {
         activeIndex: this.doubleClickActiveIndex,
@@ -287,6 +325,10 @@ export default defineComponent({
     },
     testFunction(event: any) {
       console.log("the testFunction has been reached", event);
+    },
+    processDragEnd(): void {
+      this.drag = false;
+      this.$emit("drag-ended");
     },
     isDoubleClickedItem(item: any) {
       return compareObject(item, this.doubleClickedItem);

@@ -1,10 +1,18 @@
 <template>
-  <div>
-    <h1>Mdr Notes</h1>
-    <h2>Log In with a Solid Pod</h2>
-    <h3>Use solidcommunity.net</h3>
-    <Button label="Create a pod" class="p-m-2" style="align-content: start" />
-    <Button label="Login" class="p-m-2" @click="login('community')" />
+  <div class="grid">
+    <div class="col-6">
+      <h1>Mdr Notes</h1>
+      <h2>Your notes</h2>
+      <h2>Your Thoughts</h2>
+      <h2>Your decisions </h2>
+    </div>
+    <div class="col-6">
+      <h1>Mdr Notes</h1>
+      <h2>Log In with a Solid Pod</h2>
+      <h3>Use solidcommunity.net</h3>
+      <Button label="Create a pod" class="p-m-2" style="align-content: start" />
+      <Button label="Login" class="p-m-2" @click="login('community')" />
+    </div>
   </div>
 </template>
 
@@ -46,7 +54,7 @@ export default defineComponent({
           });
         } else {
           this.setLoginInformation(getDefaultSession().info);
-          this.$router.push("/editor")
+          this.$router.push("/editor");
         }
       });
     },
@@ -54,8 +62,10 @@ export default defineComponent({
       if (session) {
         if (session.isLoggedIn === true) {
           if (session.webId) {
-            console.log("this has been executed");
             const url = new URL(session.webId);
+            localStorage.setItem("webId", url.href);
+            localStorage.setItem("setUsername", url.hostname.split("-")[0]);
+            localStorage.setItem("origin", url.origin);
             this.$store.commit("setWebId", url.href);
             this.$store.commit("setUsername", url.hostname.split("-")[0]);
             this.$store.commit("setOrigin", url.origin);

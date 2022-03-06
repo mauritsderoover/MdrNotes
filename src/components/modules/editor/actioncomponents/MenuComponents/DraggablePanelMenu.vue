@@ -7,7 +7,7 @@
       :disabled="false"
       :group="{ name: 'g1' }"
       @start="drag = true"
-      @end="drag = false"
+      @end="processDragEnd"
     >
       <template #item="{ element, index }">
         <div
@@ -47,7 +47,7 @@
                 :aria-expanded="isActive(element)"
                 :aria-controls="ariaId + '_content'"
                 @click="catchClickEvent($event, element, index)"
-                @contextmenu="onImageRightClick($event, element)"
+                @contextmenu="onImageRightClick($event, element, index)"
               >
                 <span
                   v-if="element.items"
@@ -123,11 +123,11 @@ import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
 import ContextMenu from "primevue/contextmenu";
-import { RouterLinkProps, RouterViewProps } from "vue-router";
 import {
   DraggablePanelMenu,
   BaseItem,
 } from "@/components/modules/editor/editor-interfaces";
+import { PageItem } from "@/components/modules/editor/editor-classes";
 
 export default defineComponent({
   name: "DraggablePanelMenu",
@@ -137,7 +137,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Array as PropType<Array<BaseItem>>,
+      type: Array as PropType<Array<PageItem>>,
       default: null,
     },
     sectionIdentifier: {
@@ -171,6 +171,8 @@ export default defineComponent({
     "tab-change",
     "add-menu-element",
     "label-changed",
+    "dragEnded",
+    "delete-item",
   ],
   data(): DraggablePanelMenu {
     return {
@@ -179,6 +181,7 @@ export default defineComponent({
       doubleClickActiveIndex: undefined,
       doubleClickedItem: undefined,
       rightClickedItem: undefined,
+      rightClickedIndex: undefined,
       drag: false,
       delay: 160,
       clicks: 0,
@@ -194,6 +197,9 @@ export default defineComponent({
         {
           label: "Delete page",
           icon: "pi pi-fw pi-home",
+          command: () => {
+            this.deleteAction();
+          },
         },
         {
           label: "Add subpage",
@@ -239,6 +245,9 @@ export default defineComponent({
     document.removeEventListener("click", this.onClickOutside);
   },
   methods: {
+    deleteAction(): void {
+      this.$emit("delete-item", this.rightClickedItem);
+    },
     changeMenuItem(event: any) {
       this.$emit("tab-change", event);
     },
@@ -388,6 +397,10 @@ export default defineComponent({
     isDoubleClickedItem(item: any) {
       return compareObject(item, this.doubleClickedItem);
     },
+    processDragEnd(): void {
+      this.drag = false;
+      this.$emit("dragEnded");
+    },
     getHeaderClass(item: any) {
       if (this.submenu) {
         return ["p-menuitem", item.className];
@@ -411,9 +424,10 @@ export default defineComponent({
         ? item.disabled()
         : item.disabled;
     },
-    onImageRightClick(event: any, element: any) {
+    onImageRightClick(event: any, element: PageItem, index: number) {
       (this.$refs.menu as ContextMenu).show(event);
       this.rightClickedItem = element;
+      this.rightClickedIndex = index;
     },
     deleteItem() {
       let index = -1;

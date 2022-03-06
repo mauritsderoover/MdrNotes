@@ -1,6 +1,7 @@
 import { getData } from "@/components/genericcomponents/utils/utils";
 import {
   buildThing,
+  deleteSolidDataset,
   getThing,
   saveSolidDatasetAt,
   setThing,
@@ -8,17 +9,22 @@ import {
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import {
+  getRootUrl,
   isPage,
-  retrieveIdentifier,
+  isSection,
+  retrieveIdentifier
 } from "@/components/modules/editor/DataModel";
+import { DCTERMS, LDP } from "@inrupt/vocab-common-rdf";
+import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
+
 
 export default class DataSynchronizer {
   rootUrl: string;
   changes: Record<string, string[]>;
   activeSync: Record<string, boolean>;
 
-  constructor(rootUrl: string) {
-    this.rootUrl = rootUrl;
+  constructor() {
+    this.rootUrl = getRootUrl();
     this.changes = {};
     this.activeSync = {};
   }
@@ -32,6 +38,103 @@ export default class DataSynchronizer {
       this.activeSync[pageUrl] = true;
       this.savePageContent(pageUrl);
     }
+  }
+
+  saveTitle(identifier: string, newTitle: string): void {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    getData(URL).then(async (dataSet) => {
+      if (dataSet) {
+        let thing = getThing(dataSet, URL);
+        if (!thing) throw new Error("No thing could be retrieved");
+        if (isPage(thing) || isSection(thing)) {
+          thing = buildThing(thing)
+            .setStringNoLocale(DCTERMS.title, newTitle)
+            .build();
+          await saveSolidDatasetAt(URL, setThing(dataSet, thing), {
+            fetch,
+          });
+        } else {
+          throw new Error("Thing is not a page or a section");
+        }
+      }
+    });
+  }
+
+  removeNoteFromSection(
+    pageIdentifier: string,
+    sectionIdentifier: string
+  ): void {
+    const sectionURL = this.getURL(sectionIdentifier);
+    getData(sectionURL).then(async (dataset) => {
+      if (dataset) {
+        let thing = getThing(dataset, sectionURL);
+        if (!thing) throw new Error("No thing could be retrieved");
+        thing = buildThing(thing)
+          .removeUrl(NOTETAKING.hasPage, this.getURL(pageIdentifier))
+          .build();
+        await saveSolidDatasetAt(sectionURL, setThing(dataset, thing), {
+          fetch,
+        });
+      }
+    });
+  }
+
+  removeSectionFromNoteBook(
+    sectionIdentifier: string,
+    notebookIdentifier: string
+  ): void {
+    const notebookURL = this.getURL(notebookIdentifier);
+    getData(notebookURL).then(async (dataset) => {
+      if (dataset) {
+        let thing = getThing(dataset, notebookURL);
+
+        if (!thing) throw new Error("No thing could be retrieved");
+        thing = buildThing(thing)
+          .removeUrl(NOTETAKING.hasSection, this.getURL(sectionIdentifier))
+          .build();
+        await saveSolidDatasetAt(notebookURL, setThing(dataset, thing), {
+          fetch,
+        });
+      }
+    });
+  }
+
+  getURL(identifier: string): string {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    return URL;
+  }
+
+  savePosition(identifier: string, position: number): void {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    getData(URL).then(async (dataset) => {
+      if (dataset) {
+        let thing = getThing(dataset, URL);
+        if (!thing) throw new Error("No thing could be retrieved");
+        if (isPage(thing) || isSection(thing)) {
+          thing = buildThing(thing)
+            .setInteger(SCHEMA.position, position)
+            .build();
+          await saveSolidDatasetAt(URL, setThing(dataset, thing), {
+            fetch,
+          });
+        } else {
+          throw new Error("Thing is not a page or a section");
+        }
+      }
+    });
+  }
+
+  deleteNoteResource(identifier: string): void {
+    let URL = this.rootUrl;
+    if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
+    else URL = URL + identifier;
+    deleteSolidDataset(URL, { fetch }).then(() => console.log("tob e done"));
   }
 
   savePageContent(pageIdentifier: string): void {

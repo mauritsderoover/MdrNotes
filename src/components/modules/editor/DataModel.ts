@@ -63,7 +63,6 @@ export const xmlSchemaTypes = {
 } as const;
 
 export async function loadData(): Promise<[string, TabItems, PanelMenuItems]> {
-  console.log("loadData has been started", new Date());
   const rootDataSet = await getData(ROOT_URL);
   const urls = rootDataSet
     ? getContainedResourceUrlAll(rootDataSet)
@@ -74,7 +73,6 @@ export async function loadData(): Promise<[string, TabItems, PanelMenuItems]> {
 
   if (thing) {
     const toBeReturned = await processThing(thing);
-    console.log("loadData is done", new Date());
     return toBeReturned;
   }
   throw new Error("No thing was found");
@@ -117,8 +115,6 @@ export async function savePageContent(
   if (pageIdentifier.includes("http"))
     URL = URL + retrieveIdentifier(pageIdentifier);
   else URL = URL + pageIdentifier;
-  console.log("this is URL", URL);
-  console.log("this is the pageIdentifier", pageIdentifier);
   const dataSet = await getData(URL);
   if (dataSet) {
     let thing = getThing(dataSet, URL);
@@ -166,7 +162,7 @@ async function processNoteBook(
   return [retrieveIdentifier(thing.url), tabItems, panelMenuItems];
 }
 
-async function processPage(url: string): Promise<PageItem> {
+export async function processPage(url: string): Promise<PageItem> {
   const thing = await getThingFromSolidPod(url);
   return new PageItem({
     label: getTitle(thing),
@@ -176,7 +172,7 @@ async function processPage(url: string): Promise<PageItem> {
   });
 }
 
-function getEditorContent(content: string): string {
+export function getEditorContent(content: string): string {
   try {
     return JSON.parse(content);
   } catch {
@@ -216,8 +212,8 @@ async function processSection(sectionUrl: string): Promise<PanelMenuItem[]> {
   }
 }
 
-function getPageUrls(thing: ThingPersisted): string[] {
-  return getThingUrls(thing, NOTETAKING.hasPage);
+export function getPageUrls(thing: ThingPersisted): string[] {
+  return getThingUrls(thing, NOTETAKING.hasPage) as string[];
 }
 
 export async function getThingFromSolidPod(
@@ -232,17 +228,25 @@ export async function getThingFromSolidPod(
   throw new Error("No dataset could be retrieved");
 }
 
-function getThingUrls(thing: ThingPersisted, predicate: VocabTerm) {
+export function getThingUrls(
+  thing: ThingPersisted,
+  predicate: VocabTerm
+): string | string[] {
   const urls = getPredicate(thing, (predicate as VocabTerm).iri.value);
   if (Array.isArray(urls)) return urls;
-  throw new Error("SectionUrls must be an array");
+  if (typeof urls === "string") return urls;
+  throw new Error("Urls must be an array or a string");
 }
 
-function getSectionUrls(thing: ThingPersisted): string[] {
-  return getThingUrls(thing, NOTETAKING.hasSection);
+export function getSectionUrls(thing: ThingPersisted): string[] {
+  return getThingUrls(thing, NOTETAKING.hasSection) as string[];
 }
 
-async function getNoteBook(thing: Thing): Promise<Thing> {
+export function getSectionUrlFromNote(thing: ThingPersisted): string {
+  return getThingUrls(thing, NOTETAKING.partOfSection) as string;
+}
+
+export async function getNoteBook(thing: Thing): Promise<Thing> {
   let internalThing = thing;
   if (isPage(thing)) internalThing = await getSection(thing);
   const noteBookUrl = getNoteBookUrl(internalThing);
@@ -278,11 +282,11 @@ function retrieveSection() {
   throw new Error("This needs to be implemented");
 }
 
-function isSectionGroup(thing: Thing): boolean {
+export function isSectionGroup(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.SectionGroup);
 }
 
-function isPageGroup(thing: Thing): boolean {
+export function isPageGroup(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.PageGroup);
 }
 
@@ -290,11 +294,11 @@ export function isPage(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.Note);
 }
 
-function isSection(thing: Thing): boolean {
+export function isSection(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.Section);
 }
 
-function isNoteBook(thing: Thing): boolean {
+export function isNoteBook(thing: Thing): boolean {
   return ThingOfType(thing, NOTETAKING.NoteBook);
 }
 
@@ -320,7 +324,7 @@ function getThingType(thing: Thing): string | readonly string[] | undefined {
   return getPredicate(thing, RDF.type);
 }
 
-function getPageText(thing: ThingPersisted): string {
+export function getPageText(thing: ThingPersisted): string {
   const titlePredicates = getPredicate(thing, SCHEMA.Text);
   if (titlePredicates) {
     if (Array.isArray(titlePredicates) && titlePredicates.length > 0)
@@ -331,7 +335,14 @@ function getPageText(thing: ThingPersisted): string {
   return "{}";
 }
 
-function getTitle(thing: ThingPersisted): string {
+export function getPosition(thing: ThingPersisted): string {
+  const predicates = getPredicate(thing, SCHEMA.position);
+  if (Array.isArray(predicates) && predicates.length > 0) return predicates[0];
+  if (typeof predicates === "string") return predicates;
+  throw new Error("Impossible option has been reached");
+}
+
+export function getTitle(thing: ThingPersisted): string {
   const titlePredicates = getPredicate(thing, DCTERMS.title);
   if (Array.isArray(titlePredicates) && titlePredicates.length > 0)
     return titlePredicates[0];
@@ -339,11 +350,11 @@ function getTitle(thing: ThingPersisted): string {
   throw new Error("Impossible option has been reached");
 }
 
-function hasPages(thing: ThingPersisted): boolean {
+export function hasPages(thing: ThingPersisted): boolean {
   return !!getPredicate(thing, NOTETAKING.hasPage);
 }
 
-function getPredicate(
+export function getPredicate(
   thing: Thing,
   predicateIri: string
 ): string | readonly string[] | undefined {
@@ -362,12 +373,12 @@ function getPredicate(
 
 type DataTypeIriString = XmlSchemaTypeIri | string;
 
-function processLiterals(
+export function processLiterals(
   literals: Readonly<Record<DataTypeIriString, readonly string[]>>
 ): readonly string[] | undefined {
-  return literals[xmlSchemaTypes.string]
-    ? literals[xmlSchemaTypes.string]
-    : undefined;
+  if (literals[xmlSchemaTypes.string]) return literals[xmlSchemaTypes.string];
+  if (literals[xmlSchemaTypes.integer]) return literals[xmlSchemaTypes.integer];
+  return undefined;
 }
 
 /**
@@ -472,12 +483,12 @@ export async function newNoteBook(title: string): Promise<void> {
 /**
  * A page or note can be linked to pagegroup or a
  */
-enum hasPage {
+export enum hasPage {
   SECTION,
   PAGE_GROUP,
 }
 
-async function linkPage(
+export async function linkPage(
   target: hasPage,
   pageIdentifier: string,
   targetIdentifier: string
@@ -525,7 +536,7 @@ async function createNoteBook(title: string): Promise<string> {
 /**
  * A saction can be linked to a notebook or a sectiongroup
  */
-enum hasSection {
+export enum hasSection {
   NOTEBOOK,
   SECTIONGROUP,
 }
@@ -588,7 +599,7 @@ async function createSection(title: string): Promise<string> {
   return await createNoteTakingElement(title, NOTETAKING.Section);
 }
 
-function makeId(length = 28): string {
+export function makeId(length = 28): string {
   let result = "";
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -607,7 +618,13 @@ async function createPageGroup(title: string): Promise<string> {
   return await createNoteTakingElement(title, NOTETAKING.PageGroup);
 }
 
-async function createPage(title: string): Promise<string> {
+export function getRootUrl(): string {
+  const rootUrl = localStorage.getItem("origin");
+  if (rootUrl) return rootUrl + "/notes/";
+  throw new Error("No rooturl has been stored yet");
+}
+
+export async function createPage(title: string): Promise<string> {
   const identifier = await createNoteTakingElement(title, NOTETAKING.Note);
   savePageContent(identifier, "").then();
   return identifier;

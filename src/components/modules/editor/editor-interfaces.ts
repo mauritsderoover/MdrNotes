@@ -1,10 +1,12 @@
 import { Editor } from "@tiptap/vue-3";
 import { PageItem } from "@/components/modules/editor/editor-classes";
 import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
+import DataLoader from "@/components/modules/editor/data-loader";
 
 export interface ContextMenuItem {
   label: string;
   icon: string;
+  command?(event: any): void;
 }
 
 export interface BaseItem {
@@ -18,7 +20,7 @@ export interface BaseItem {
   to?: string;
 }
 
-type Section = BaseItem;
+export type Section = BaseItem;
 
 /**
  * @alias: A PanelMenuItem is an alias for a page and a page-group
@@ -58,7 +60,7 @@ export interface DraggableTabMenu {
   d_activeIndex: number | undefined;
   doubleClickActiveIndex: number | undefined;
   activeItem: BaseItem | undefined;
-  draggable: boolean;
+  drag: boolean;
   delay: number;
   clicks: number;
   timer: ReturnType<typeof setTimeout> | undefined;
@@ -66,14 +68,17 @@ export interface DraggableTabMenu {
   currentTarget: EventTarget | null;
   inputItem: HTMLInputElement | undefined;
   doubleClickedItem: BaseItem | undefined;
+  rightClickedItem: undefined | Section;
+  items: Array<ContextMenuItem>;
 }
 
 export interface DraggablePanelMenu {
   oldSection?: string;
-  activeItem: BaseItem | undefined;
-  doubleClickedItem: BaseItem | undefined;
+  activeItem: PageItem | undefined;
+  doubleClickedItem: PageItem | undefined;
   doubleClickActiveIndex: number | undefined;
-  rightClickedItem: BaseItem | undefined;
+  rightClickedItem: PageItem | undefined;
+  rightClickedIndex: number | undefined;
   drag: boolean;
   delay: number;
   clicks: number;
@@ -85,7 +90,7 @@ export interface DraggablePanelMenu {
 }
 
 export interface MainDashBoardInterface {
-  initial_tabs: boolean;
+  newTab: boolean;
   tabItems: TabItems;
   panelMenuItems: PanelMenuItems;
   currentTab: string;
@@ -97,5 +102,6 @@ export interface MainDashBoardInterface {
   editor: undefined | Editor;
   activeMenuElement: PageItem | undefined;
   notebook: string | undefined;
-  synchronizer: DataSynchronizer
+  synchronizer: DataSynchronizer;
+  dataLoader: DataLoader | undefined;
 }
