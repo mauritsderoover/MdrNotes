@@ -167,6 +167,14 @@ export default class DataLoader {
     }
   }
 
+  newNoteBook(title: string): void {
+    const notebookID = makeId();
+    this.createNoteBook(notebookID, title).then(() => {
+      this.notebook = notebookID;
+      this.newSection();
+    });
+  }
+
   loadData(): void {
     console.log("this is panelMenuItems", this.panelMenuItems);
     console.log("this is tabItems", this.tabItems);
