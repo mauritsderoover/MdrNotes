@@ -273,7 +273,10 @@ export default class DataLoader {
 
   processPage(url: string, sectionIdentifier: string): void {
     getThingFromSolidPod(url).then((value) => {
-      this.panelMenuItems[sectionIdentifier].push(
+      const position = getPosition(value);
+      this.panelMenuItems[sectionIdentifier].splice(
+        Number(position),
+        1,
         new PageItem({
           label: getTitle(value),
           key: retrieveIdentifier(url),
