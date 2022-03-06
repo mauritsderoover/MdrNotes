@@ -62,9 +62,45 @@ export default class DataLoader {
     this.panelMenuItems = panelMenuItems;
     this.tabItems = tabItems;
     this.resourceUrls = [];
-    this.rootUrl = rootUrl;
-    this.dataSynchronizer = new DataSynchronizer(this.rootUrl);
-    this.getRootDataSet().then(() => this.getAllContainedUrls());
+    this.rootUrl = getRootUrl();
+    this.initialDataLoaded = false;
+    this.dataSynchronizer = new DataSynchronizer();
+    this.initialize();
+    this.highestPosition = 0;
+    this.positionTracker = {};
+    // this.getRootDataSet().then(() => this.getAllContainedUrls());
+  }
+
+  initialize(): void {
+    this.getRootDataSet()
+      .then(() => {
+        this.getAllContainedUrls();
+        this.loadData();
+      })
+      .catch(() => this.newNoteBook("First Notebook"));
+  }
+
+  initialDataLoadedChecker(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      (function checkRequirement(this: DataLoader) {
+        if (this.checkRequirements()) {
+          resolve();
+        } else setTimeout(checkRequirement.bind(this), 100);
+      }.apply(this));
+    });
+  }
+
+  checkRequirements(): boolean {
+    if (
+      this.tabItems &&
+      this.tabItems.length > 0 &&
+      this.tabItems[0] !== undefined &&
+      this.panelMenuItems &&
+      this.panelMenuItems[this.tabItems[0].key] &&
+      this.panelMenuItems[this.tabItems[0].key].length > 0
+    )
+      return true;
+    else return false;
   }
 
   async getRootDataSet(): Promise<void> {
