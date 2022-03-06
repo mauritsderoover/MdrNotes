@@ -618,6 +618,12 @@ async function createPageGroup(title: string): Promise<string> {
   return await createNoteTakingElement(title, NOTETAKING.PageGroup);
 }
 
+export function getRootUrl(): string {
+  const rootUrl = localStorage.getItem("origin");
+  if (rootUrl) return rootUrl + "/notes/";
+  throw new Error("No rooturl has been stored yet");
+}
+
 export async function createPage(title: string): Promise<string> {
   const identifier = await createNoteTakingElement(title, NOTETAKING.Note);
   savePageContent(identifier, "").then();
