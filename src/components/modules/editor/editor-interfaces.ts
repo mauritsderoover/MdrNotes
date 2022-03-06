@@ -6,6 +6,7 @@ import DataLoader from "@/components/modules/editor/data-loader";
 export interface ContextMenuItem {
   label: string;
   icon: string;
+  command?(event: any): void;
 }
 
 export interface BaseItem {
@@ -67,14 +68,17 @@ export interface DraggableTabMenu {
   currentTarget: EventTarget | null;
   inputItem: HTMLInputElement | undefined;
   doubleClickedItem: BaseItem | undefined;
+  rightClickedItem: undefined | Section;
+  items: Array<ContextMenuItem>;
 }
 
 export interface DraggablePanelMenu {
   oldSection?: string;
-  activeItem: BaseItem | undefined;
-  doubleClickedItem: BaseItem | undefined;
+  activeItem: PageItem | undefined;
+  doubleClickedItem: PageItem | undefined;
   doubleClickActiveIndex: number | undefined;
-  rightClickedItem: BaseItem | undefined;
+  rightClickedItem: PageItem | undefined;
+  rightClickedIndex: number | undefined;
   drag: boolean;
   delay: number;
   clicks: number;
@@ -86,7 +90,7 @@ export interface DraggablePanelMenu {
 }
 
 export interface MainDashBoardInterface {
-  initial_tabs: boolean;
+  newTab: boolean;
   tabItems: TabItems;
   panelMenuItems: PanelMenuItems;
   currentTab: string;
