@@ -47,7 +47,7 @@
                 :aria-expanded="isActive(element)"
                 :aria-controls="ariaId + '_content'"
                 @click="catchClickEvent($event, element, index)"
-                @contextmenu="onImageRightClick($event, element)"
+                @contextmenu="onImageRightClick($event, element, index)"
               >
                 <span
                   v-if="element.items"
@@ -172,6 +172,7 @@ export default defineComponent({
     "add-menu-element",
     "label-changed",
     "dragEnded",
+    "delete-item",
   ],
   data(): DraggablePanelMenu {
     return {
@@ -180,6 +181,7 @@ export default defineComponent({
       doubleClickActiveIndex: undefined,
       doubleClickedItem: undefined,
       rightClickedItem: undefined,
+      rightClickedIndex: undefined,
       drag: false,
       delay: 160,
       clicks: 0,
@@ -195,6 +197,9 @@ export default defineComponent({
         {
           label: "Delete page",
           icon: "pi pi-fw pi-home",
+          command: () => {
+            this.deleteAction();
+          },
         },
         {
           label: "Add subpage",
@@ -240,6 +245,9 @@ export default defineComponent({
     document.removeEventListener("click", this.onClickOutside);
   },
   methods: {
+    deleteAction(): void {
+      this.$emit("delete-item", this.rightClickedItem);
+    },
     changeMenuItem(event: any) {
       this.$emit("tab-change", event);
     },
@@ -416,9 +424,10 @@ export default defineComponent({
         ? item.disabled()
         : item.disabled;
     },
-    onImageRightClick(event: any, element: any) {
+    onImageRightClick(event: any, element: PageItem, index: number) {
       (this.$refs.menu as ContextMenu).show(event);
       this.rightClickedItem = element;
+      this.rightClickedIndex = index;
     },
     deleteItem() {
       let index = -1;
