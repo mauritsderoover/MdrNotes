@@ -1,6 +1,7 @@
 <template>
   <div class="p-tabmenu p-component">
     <div ref="nav" class="p-tabmenu-nav p-reset" role="tablist">
+      <ContextMenu ref="menu" :model="items" />
       <draggable
         :list="model"
         item-key="key-panel"
@@ -50,6 +51,7 @@
                   :aria-controls="ariaId + '_content'"
                   class="p-menuitem-link"
                   @click="catchClickEvent($event, element, index)"
+                  @contextmenu="onImageRightClick($event, element)"
                 >
                   <span
                     v-if="element.icon"
@@ -105,6 +107,7 @@
 import { defineComponent, PropType } from "vue";
 import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
+import ContextMenu from "primevue/contextmenu";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
 import {
   DraggableTabMenu,
@@ -115,6 +118,7 @@ export default defineComponent({
   name: "DraggableTabMenu",
   components: {
     draggable,
+    ContextMenu,
   },
   props: {
     model: {
@@ -135,7 +139,14 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ["update:activeIndex", "tab-change", "add-tab", "label-changed", "drag-ended"],
+  emits: [
+    "update:activeIndex",
+    "tab-change",
+    "add-tab",
+    "label-changed",
+    "drag-ended",
+    "delete-item",
+  ],
   data(): DraggableTabMenu {
     return {
       d_activeIndex: this.activeIndex,
@@ -149,6 +160,25 @@ export default defineComponent({
       currentTarget: null,
       inputItem: undefined,
       doubleClickedItem: undefined,
+      rightClickedItem: undefined,
+      items: [
+        {
+          label: "Add page",
+          icon: "pi pi-fw pi-home",
+        },
+        {
+          label: "Delete page",
+          icon: "pi pi-fw pi-home",
+          command: (event) => {
+            console.log("this is event in delete page", event);
+            this.deleteAction();
+          },
+        },
+        {
+          label: "Add subpage",
+          icon: "pi pi-fw pi-calendar",
+        },
+      ],
     };
   },
   computed: {
@@ -194,6 +224,15 @@ export default defineComponent({
     document.removeEventListener("click", this.onClickOutside);
   },
   methods: {
+    deleteAction(): void {
+      console.log("this is rightClickedItem", this.rightClickedItem);
+      this.$emit("delete-item", this.rightClickedItem);
+    },
+    onImageRightClick(event: any, element: any) {
+      console.log("the function onImageRightClick has been executed");
+      (this.$refs.menu as ContextMenu).show(event);
+      this.rightClickedItem = element;
+    },
     abortLabelChange() {
       this.$emit("label-changed", {
         activeIndex: this.doubleClickActiveIndex,
