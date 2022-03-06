@@ -1,10 +1,18 @@
 <template>
-  <div>
-    <h1>Mdr Notes</h1>
-    <h2>Log In with a Solid Pod</h2>
-    <h3>Use solidcommunity.net</h3>
-    <Button label="Create a pod" class="p-m-2" style="align-content: start" />
-    <Button label="Login" class="p-m-2" @click="login('community')" />
+  <div class="grid">
+    <div class="col-6">
+      <h1>Mdr Notes</h1>
+      <h2>Your notes</h2>
+      <h2>Your Thoughts</h2>
+      <h2>Your decisions </h2>
+    </div>
+    <div class="col-6">
+      <h1>Mdr Notes</h1>
+      <h2>Log In with a Solid Pod</h2>
+      <h3>Use solidcommunity.net</h3>
+      <Button label="Create a pod" class="p-m-2" style="align-content: start" />
+      <Button label="Login" class="p-m-2" @click="login('community')" />
+    </div>
   </div>
 </template>
 
