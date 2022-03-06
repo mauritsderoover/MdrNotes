@@ -75,6 +75,56 @@ export default class DataLoader {
     }
   }
 
+  cleanNotesContainer(): void {
+    this.resourceUrls.forEach((resourceURL) => {
+      getThingFromSolidPod(resourceURL).then((thing) => {
+        if (thing) {
+          if (isPage(thing)) {
+            const sectionUrl = getSectionUrlFromNote(thing);
+            getSolidDataset(sectionUrl, { fetch }).catch(() => {
+              this.dataSynchronizer.deleteNoteResource(thing.url);
+            });
+          }
+          if (isNoteBook(thing)) {
+            const sectionsUrls = getSectionUrls(thing);
+            sectionsUrls.forEach((sectionUrl) => {
+              getSolidDataset(sectionUrl, { fetch }).catch(() => {
+                if (this.notebook) {
+                  this.dataSynchronizer.removeSectionFromNoteBook(
+                    sectionUrl,
+                    this.notebook
+                  );
+                }
+              });
+            });
+          }
+        }
+      });
+    });
+  }
+
+  deleteNotePage(sectionIdentifier: string, item: PageItem): void {
+    const index = this.panelMenuItems[sectionIdentifier].findIndex(
+      (value) => value.key === item.key
+    );
+    console.log("this is index", index);
+    this.panelMenuItems[sectionIdentifier].splice(index, 1);
+    this.dataSynchronizer.removeNoteFromSection(item.key, sectionIdentifier);
+    this.dataSynchronizer.deleteNoteResource(item.key);
+  }
+
+  deleteSection(item: BaseItem): void {
+    const index = this.tabItems.findIndex((value) => value.key === item.key);
+    this.tabItems.splice(index, 1);
+    this.dataSynchronizer.deleteNoteResource(item.key);
+    if (this.notebook)
+      this.dataSynchronizer.removeSectionFromNoteBook(item.key, this.notebook);
+    for (const pageItem of this.panelMenuItems[item.key]) {
+      this.deleteNotePage(item.key, pageItem);
+    }
+    delete this.panelMenuItems[item.key];
+  }
+
   getAllContainedUrls(): void {
     if (this.rootDataSet) {
       this.resourceUrls = getContainedResourceUrlAll(this.rootDataSet);
