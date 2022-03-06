@@ -1,6 +1,7 @@
 import { getData } from "@/components/genericcomponents/utils/utils";
 import {
   buildThing,
+  deleteSolidDataset,
   getThing,
   saveSolidDatasetAt,
   setThing,
@@ -8,19 +9,22 @@ import {
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import {
+  getRootUrl,
   isPage,
   isSection,
-  retrieveIdentifier,
+  retrieveIdentifier
 } from "@/components/modules/editor/DataModel";
-import { DCTERMS } from "@inrupt/vocab-common-rdf";
+import { DCTERMS, LDP } from "@inrupt/vocab-common-rdf";
+import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
+
 
 export default class DataSynchronizer {
   rootUrl: string;
   changes: Record<string, string[]>;
   activeSync: Record<string, boolean>;
 
-  constructor(rootUrl: string) {
-    this.rootUrl = rootUrl;
+  constructor() {
+    this.rootUrl = getRootUrl();
     this.changes = {};
     this.activeSync = {};
   }
