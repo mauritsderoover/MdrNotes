@@ -4,7 +4,7 @@
       <h1>Mdr Notes</h1>
       <h2>Your notes</h2>
       <h2>Your Thoughts</h2>
-      <h2>Your decisions </h2>
+      <h2>Your decisions</h2>
     </div>
     <div class="col-6">
       <h1>Mdr Notes</h1>
@@ -42,13 +42,17 @@ export default defineComponent({
   },
   methods: {
     login(issuer: string) {
+      localStorage.setItem(
+        "origin",
+        "https://mauritsderoover.solidcommunity.net/"
+      );
       handleIncomingRedirect({
         restorePreviousSession: true,
       }).then(() => {
         if (!getDefaultSession().info.isLoggedIn) {
           login({
             oidcIssuer: this.issuers[issuer],
-            redirectUrl: "http://mdr-tools.com/",
+            redirectUrl: "http://localhost:8080/",
           }).then(() => {
             this.setLoginInformation(getDefaultSession().info);
           });
