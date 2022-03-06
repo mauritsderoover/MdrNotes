@@ -46,7 +46,7 @@ export default defineComponent({
           });
         } else {
           this.setLoginInformation(getDefaultSession().info);
-          this.$router.push("/editor")
+          this.$router.push("/editor");
         }
       });
     },
@@ -54,8 +54,10 @@ export default defineComponent({
       if (session) {
         if (session.isLoggedIn === true) {
           if (session.webId) {
-            console.log("this has been executed");
             const url = new URL(session.webId);
+            localStorage.setItem("webId", url.href);
+            localStorage.setItem("setUsername", url.hostname.split("-")[0]);
+            localStorage.setItem("origin", url.origin);
             this.$store.commit("setWebId", url.href);
             this.$store.commit("setUsername", url.hostname.split("-")[0]);
             this.$store.commit("setOrigin", url.origin);
