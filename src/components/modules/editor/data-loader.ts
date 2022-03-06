@@ -3,6 +3,7 @@ import {
   createSolidDataset,
   createThing,
   getContainedResourceUrlAll,
+  getSolidDataset,
   getThing,
   saveSolidDatasetAt,
   setThing,
@@ -18,6 +19,8 @@ import {
   getPageText,
   getPageUrls,
   getPosition,
+  getRootUrl,
+  getSectionUrlFromNote,
   getSectionUrls,
   getThingFromSolidPod,
   getTitle,
@@ -33,7 +36,9 @@ import {
   retrieveIdentifier,
 } from "@/components/modules/editor/DataModel";
 import {
+  BaseItem,
   PanelMenuItems,
+  Section,
   TabItems,
 } from "@/components/modules/editor/editor-interfaces";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
@@ -52,12 +57,11 @@ export default class DataLoader {
   tabItems: TabItems;
   notebook?: string;
   dataSynchronizer: DataSynchronizer;
+  initialDataLoaded: boolean;
+  highestPosition: number;
+  positionTracker: Record<number, TabItem>;
 
-  constructor(
-    rootUrl: string,
-    panelMenuItems: PanelMenuItems,
-    tabItems: TabItems
-  ) {
+  constructor(panelMenuItems: PanelMenuItems, tabItems: TabItems) {
     this.things = {};
     this.panelMenuItems = panelMenuItems;
     this.tabItems = tabItems;
@@ -207,6 +211,7 @@ export default class DataLoader {
     this.notebook = thing.url;
     console.log("this is notebook in data-loader", this.notebook);
     const sectionUrls = getSectionUrls(thing);
+    // this.tabItems = new Array<Section>(sectionUrls.length);
     for (const section of sectionUrls) {
       this.processSection(section).then();
     }
@@ -234,7 +239,16 @@ export default class DataLoader {
    */
   async processSection(sectionUrl: string): Promise<void> {
     const sectionThing = await getThingFromSolidPod(sectionUrl);
-    const position = getPosition(sectionThing);
+    const position = Number(getPosition(sectionThing));
+    console.log("this is position", position);
+    console.log("this is title", getTitle(sectionThing));
+    // const tabItem = new TabItem({
+    //   key: retrieveIdentifier(sectionUrl),
+    //   label: getTitle(sectionThing),
+    //   url: sectionUrl,
+    // });
+    //
+    // this.tabItems[position] = tabItem;
 
     this.tabItems.splice(
       Number(position),
@@ -245,6 +259,7 @@ export default class DataLoader {
         url: sectionUrl,
       })
     );
+    console.log("this is tabItems", this.tabItems);
     this.panelMenuItems[retrieveIdentifier(sectionUrl)] = [];
     if (hasPages(sectionThing)) {
       const pageUrls = getPageUrls(sectionThing);
