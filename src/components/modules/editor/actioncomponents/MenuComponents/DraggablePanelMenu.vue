@@ -123,11 +123,11 @@ import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
 import ContextMenu from "primevue/contextmenu";
-import { RouterLinkProps, RouterViewProps } from "vue-router";
 import {
   DraggablePanelMenu,
   BaseItem,
 } from "@/components/modules/editor/editor-interfaces";
+import { PageItem } from "@/components/modules/editor/editor-classes";
 
 export default defineComponent({
   name: "DraggablePanelMenu",
@@ -137,7 +137,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Array as PropType<Array<BaseItem>>,
+      type: Array as PropType<Array<PageItem>>,
       default: null,
     },
     sectionIdentifier: {
