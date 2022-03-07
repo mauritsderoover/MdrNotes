@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  mdr-notes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mdr-notes
+    container_name: mdr-notes
+    restart: unless-stopped
+    volumes:
+      - /app
+    networks:
+      - app-network
+
+  webserver:
+    image: nginx:mainline-alpine
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - web-root:/var/www/html
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - mdr-notes
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
+    depends_on:
+      - webserver
+    command: certonly --webroot --webroot-path=/var/www/html --email maurits.de.roover@outlook.com --agree-tos --no-eff-email --staging -d mdr-tools.com  -d www.mdr-tools.com
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  web-root:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
