@@ -1,5 +1,9 @@
 # mdr-notes
 
+TO DELETE
+
+https://www.linuxserver.io/blog/2017-11-28-how-to-setup-a-reverse-proxy-with-letsencrypt-ssl-for-all-your-docker-apps
+
 ## Project setup
 ```
 npm install
