@@ -22,6 +22,6 @@ services:
       - PGID=1000
       - EMAIL=maurits.de.roover@outlook.com
       - URL=mdr-tools.com
-      - SUBDOMAINS = www
+      - SUBDOMAINS=www
       - DHLEVEL=4096
       - TZ=Europe/London
