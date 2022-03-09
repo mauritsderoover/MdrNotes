@@ -17,7 +17,6 @@ services:
     image: lscr.io/linuxserver/swag
     container_name: le
     ports:
-      - "80:80"
       - "443:443"
     volumes:
       - /opt/appdata/letsencrypt:/config
