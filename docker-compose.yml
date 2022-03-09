@@ -3,8 +3,6 @@ services:
   mdr-notes:
     container_name: mdr-notes
     image: mdr-notes
-    ports:
-
     build:
       context: .
       dockerfile: Dockerfile
