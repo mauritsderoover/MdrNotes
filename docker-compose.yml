@@ -9,7 +9,8 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-
+    volumes:
+      - /opt/appdata/mdrnotes:/config
   letsencrypt:
     image: lscr.io/linuxserver/swag
     container_name: le
