@@ -3,9 +3,11 @@ services:
   mdr-notes:
     container_name: mdr-notes
     image: mdr-notes
+    ports:
+      - "8080:80"
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: DockerfileBLABLA
     restart: unless-stopped
     networks:
       - app-network
