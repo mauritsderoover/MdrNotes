@@ -3,6 +3,8 @@ services:
   mdr-notes:
     container_name: mdr-notes
     image: mdr-notes
+    ports:
+      - "8080:80"
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,7 +13,7 @@ services:
     image: lscr.io/linuxserver/swag
     container_name: le
     ports:
-      - "80:8080"
+      - "80:80"
       - "443:443"
     volumes:
       - /opt/appdata/letsencrypt:/config
