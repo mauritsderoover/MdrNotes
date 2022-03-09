@@ -9,6 +9,9 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    networks:
+      - app-network
+
   letsencrypt:
     image: lscr.io/linuxserver/swag
     container_name: le
@@ -18,6 +21,8 @@ services:
     volumes:
       - /opt/appdata/letsencrypt:/config
     restart: always
+    networks:
+      - app-network
     depends_on:
       - mdr-notes
     environment:
@@ -27,3 +32,7 @@ services:
       - URL=mdr-tools.com
       - DHLEVEL=4096
       - TZ=Europe/London
+
+networks:
+  app-network:
+    driver: bridge
