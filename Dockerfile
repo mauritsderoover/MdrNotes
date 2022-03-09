@@ -4,6 +4,6 @@ COPY package*.json ./
 RUN npm install
 COPY ./ .
 EXPOSE 80
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "build"]
 
 
