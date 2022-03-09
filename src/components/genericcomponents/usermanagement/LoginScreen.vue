@@ -42,17 +42,13 @@ export default defineComponent({
   },
   methods: {
     login(issuer: string) {
-      localStorage.setItem(
-        "origin",
-        "https://mauritsderoover.solidcommunity.net/"
-      );
       handleIncomingRedirect({
         restorePreviousSession: true,
       }).then(() => {
         if (!getDefaultSession().info.isLoggedIn) {
           login({
             oidcIssuer: this.issuers[issuer],
-            redirectUrl: "http://mdr-tools.com/",
+            redirectUrl: "https://mdr-tools.com",
           }).then(() => {
             this.setLoginInformation(getDefaultSession().info);
           });
