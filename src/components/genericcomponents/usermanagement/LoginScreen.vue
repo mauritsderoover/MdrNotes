@@ -2,9 +2,9 @@
   <div class="grid">
     <div class="col-6">
       <h1>Mdr Notes</h1>
-      <h2>Your notes</h2>
+      <h2>Your Notes</h2>
       <h2>Your Thoughts</h2>
-      <h2>Your decisions</h2>
+      <h2>Your Data</h2>
     </div>
     <div class="col-6">
       <h1>Mdr Notes</h1>
@@ -36,9 +36,6 @@ export default defineComponent({
         community: "https://solidcommunity.net/",
       } as { [index: string]: string },
     };
-  },
-  beforeMount() {
-    this.login("community");
   },
   methods: {
     login(issuer: string) {
