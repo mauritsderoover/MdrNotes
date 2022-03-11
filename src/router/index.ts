@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import Home from "../views/Home.vue";
 import LoginScreen from "@/components/genericcomponents/usermanagement/LoginScreen.vue";
 import MainDashboardSolidData from "@/components/modules/editor/MainDashboardSolidData.vue";
 import Callback from "@/components/genericcomponents/callback/Callback.vue";
