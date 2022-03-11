@@ -44,4 +44,20 @@ const router = createRouter({
   routes,
 });
 
+router.beforeEach((to, from, next) => {
+  if (
+    !getDefaultSession().info.isLoggedIn &&
+    to.path !== "/callback" &&
+    to.path !== "/login" &&
+    to.name !== "NotFound"
+  ) {
+    login({
+      oidcIssuer: "https://solidcommunity.net/",
+      redirectUrl: "http://localhost:8080/callback",
+    });
+  } else {
+    next();
+  }
+});
+
 export default router;
