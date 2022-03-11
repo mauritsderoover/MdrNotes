@@ -47,6 +47,7 @@ router.beforeEach((to, from, next) => {
   if (
     !getDefaultSession().info.isLoggedIn &&
     to.path !== "/callback" &&
+    to.path !== "/" &&
     to.path !== "/login" &&
     to.name !== "NotFound"
   ) {
