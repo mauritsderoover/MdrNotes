@@ -12,11 +12,10 @@ import {
   getRootUrl,
   isPage,
   isSection,
-  retrieveIdentifier
+  retrieveIdentifier,
 } from "@/components/modules/editor/DataModel";
 import { DCTERMS, LDP } from "@inrupt/vocab-common-rdf";
 import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
-
 
 export default class DataSynchronizer {
   rootUrl: string;
