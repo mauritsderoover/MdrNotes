@@ -1,44 +1,34 @@
 <template>
-  <div class="grid nested-grid">
-    <div class="col-12">
-      <div class="grid">
-        <div class="col-11">
-          <menu-bar v-if="editor" class="editor__header" :editor="editor" />
-        </div>
-        <div class="col-1"><Button label="Logout" @click="logUserOut" /></div>
-      </div>
-    </div>
-    <div class="col-12">
-      <draggable-tab-menu
-        v-model:activeIndex="activeIndex"
-        :model="tabItems"
-        :new-tab="newTab"
-        @tab-change="updateCurrentTab"
-        @add-tab="addTab"
-        @label-changed="labelChange"
-        @drag-ended="saveAllPositions"
-        @delete-item="deleteSection"
-      />
-    </div>
-    <div class="col-12">
-      <div class="grid">
-        <div class="col-2">
-          <draggable-panel-menu
-            :model="panelMenuItems[currentTab]"
-            :section-identifier="currentTab"
-            layer="mainItem"
-            @tab-change="updateMenuItem"
-            @add-menu-element="addMenuElement"
-            @label-changed="labelChange"
-            @drag-ended="saveAllPositions"
-            @delete-item="deletePageNote"
-          />
-        </div>
-        <div class="col-10">
-          <editor-content v-if="editor" :editor="editor" />
-        </div>
-      </div>
-    </div>
+  <div>
+    <editor-notes
+      v-if="activeMenuElement"
+      v-model="activeMenuElement.editorContent"
+    >
+      <template #tabs>
+        <draggable-tab-menu
+          v-model:activeIndex="activeIndex"
+          :model="tabItems"
+          :new-tab="newTab"
+          @tab-change="updateCurrentTab"
+          @add-tab="addTab"
+          @label-changed="labelChange"
+          @drag-ended="saveAllPositions"
+          @delete-item="deleteSection"
+        />
+      </template>
+      <template #panelMenu>
+        <draggable-panel-menu
+          :model="panelMenuItems[currentTab]"
+          :section-identifier="currentTab"
+          layer="mainItem"
+          @tab-change="updateMenuItem"
+          @add-menu-element="addMenuElement"
+          @label-changed="labelChange"
+          @drag-ended="saveAllPositions"
+          @delete-item="deletePageNote"
+        />
+      </template>
+    </editor-notes>
   </div>
 </template>
 
