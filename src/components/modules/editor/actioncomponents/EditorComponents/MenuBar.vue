@@ -1,23 +1,44 @@
 <template>
-  <div>
-    <template v-for="(item, index) in items">
-      <div
-        class="divider"
-        v-if="item.type === 'divider'"
-        :key="`divider${index}`"
-      />
-      <menu-item v-else :key="index" v-bind="item" />
-    </template>
+  <div class="grid">
+    <div class="col flex justify-content-start">
+      <template v-for="(item, index) in items">
+        <div
+          class="divider"
+          v-if="item.type === 'divider'"
+          :key="`divider${index}`"
+        />
+        <menu-item v-else :key="index" v-bind="item" />
+      </template>
+    </div>
+    <div class="col flex justify-content-end">
+      <button
+        type="button"
+        class="menu-item"
+        title="Settings"
+        aria-haspopup="true"
+        aria-controls="overlay_menu"
+        @click="toggleSettingsMenu"
+      >
+        <svg class="remix">
+          <use :xlink:href="`${remixiconUrl}#ri-settings-4-line`" />
+        </svg>
+      </button>
+    </div>
+
+    <Menu id="overlay_menu" ref="menu" :model="settings" :popup="true" />
   </div>
 </template>
 
 <script lang="js">
 import MenuItem from "./MenuItem.vue";
+import remixiconUrl from "remixicon/fonts/remixicon.symbol.svg";
+import Menu from "primevue/menu";
 import { Editor } from "@tiptap/vue-3";
 
 export default {
   components: {
     MenuItem,
+    Menu,
   },
 
   props: {
@@ -29,6 +50,7 @@ export default {
 
   data() {
     return {
+      remixiconUrl,
       items: [
         {
           icon: "bold",
@@ -176,8 +198,20 @@ export default {
           action: () => this.editor.chain().focus().redo().run(),
         },
       ],
+      settings: [
+        {
+          label: "Log out",
+          icon: "pi pi-sign-out",
+          to: "/logout"
+        }
+      ]
     };
   },
+  methods: {
+    toggleSettingsMenu(event) {
+      this.$refs.menu.toggle(event);
+    }
+  }
 };
 </script>
 
