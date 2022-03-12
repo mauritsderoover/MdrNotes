@@ -1,5 +1,22 @@
 <template>
-  <editor-content v-if="editor" :editor="editor" />
+  <div class="grid">
+    <div class="col-12">
+      <menu-bar v-if="editor" class="editor__header" :editor="editor" />
+    </div>
+    <div class="col-12">
+      <slot name="tabs"> </slot>
+    </div>
+    <div class="col-12">
+      <div class="grid">
+        <div class="col-2">
+          <slot name="panelMenu"></slot>
+        </div>
+        <div class="col-10">
+          <editor-content v-if="editor" :editor="editor" />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
