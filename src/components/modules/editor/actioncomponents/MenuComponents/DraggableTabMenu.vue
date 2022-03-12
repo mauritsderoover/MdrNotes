@@ -19,7 +19,7 @@
             :class="getItemClass(element, index)"
             :style="element.style"
           >
-            <div :class="getItemClass(element, index)" :style="element.style">
+            <div :class="getItemClass(element, index)" :style="element.style"  @click="catchClickEvent($event, element, index)">
               <template v-if="!$slots.element">
                 <router-link
                   v-if="element.to && !disabled(element)"
@@ -50,7 +50,6 @@
                   :aria-expanded="isActive(element)"
                   :aria-controls="ariaId + '_content'"
                   class="p-menuitem-link"
-                  @click="catchClickEvent($event, element, index)"
                   @contextmenu="onImageRightClick($event, element)"
                 >
                   <span
