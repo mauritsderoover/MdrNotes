@@ -12,10 +12,20 @@ import Highlight from "@tiptap/extension-highlight";
 import CharacterCount from "@tiptap/extension-character-count";
 import TextAlign from "@tiptap/extension-text-align";
 import MenuBar from "@/components/modules/editor/actioncomponents/EditorComponents/MenuBar.vue";
-import { Editor } from "@tiptap/vue-3";
-
+import { Editor, EditorContent } from "@tiptap/vue-3";
 export default defineComponent({
-  name: "Editor",
+  name: "EditorNotes",
+  components: {
+    EditorContent,
+    MenuBar,
+  },
+  props: {
+    modelValue: {
+      type: String,
+      default: "",
+    },
+  },
+  emits: ["update:modelValue"],
   data() {
     return {
       editor: new Editor({
@@ -36,9 +46,25 @@ export default defineComponent({
       }),
     };
   },
+  watch: {
+    modelValue(value) {
+      const isSame = this.editor.getHTML() === value;
+
+      if (isSame) {
+        return;
+      }
+
+      this.editor.commands.setContent(value, false);
+    },
+  },
+  mounted() {
+    this.editor.on("update", () => {
+      this.$emit("update:modelValue", this.editor.getHTML());
+    });
+  },
   beforeUnmount() {
     this.editor.destroy();
-  }
+  },
 });
 </script>
 
