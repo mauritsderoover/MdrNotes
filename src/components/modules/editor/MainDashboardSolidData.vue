@@ -1,5 +1,4 @@
 <template>
-  <Button @click="cleanNotesContainer" label="Clean NotesContainer" />
   <div class="grid nested-grid">
     <div class="col-12">
       <div class="grid">
@@ -97,6 +96,8 @@ export default defineComponent({
     };
   },
   beforeMount() {
+    console.log("this should be HOST", process.env.HOST);
+    console.log("this is process.env", process.env);
     this.dataLoader = new DataLoader(this.panelMenuItems, this.tabItems);
     // this.tabItems = this.dataLoader.tabItems;
     this.dataLoader.initialDataLoadedChecker().then(() => {
