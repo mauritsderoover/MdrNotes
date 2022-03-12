@@ -53,7 +53,7 @@ router.beforeEach((to, from, next) => {
   ) {
     login({
       oidcIssuer: "https://solidcommunity.net/",
-      redirectUrl: "http://localhost:8080/callback",
+      redirectUrl: `${process.env.VUE_APP_HOST}/callback`,
     });
   } else {
     next();

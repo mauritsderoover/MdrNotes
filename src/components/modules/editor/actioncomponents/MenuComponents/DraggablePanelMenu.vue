@@ -14,6 +14,7 @@
           v-if="visible(element)"
           :class="getPanelClass(element)"
           :style="element.style"
+          @click="catchClickEvent($event, element, index)"
         >
           <div :class="getHeaderClass(element)" :style="element.style">
             <template v-if="!$slots.element">
@@ -46,7 +47,6 @@
                 :tabindex="disabled(element) ? null : '0'"
                 :aria-expanded="isActive(element)"
                 :aria-controls="ariaId + '_content'"
-                @click="catchClickEvent($event, element, index)"
                 @contextmenu="onImageRightClick($event, element, index)"
               >
                 <span
