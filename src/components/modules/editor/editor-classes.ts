@@ -4,7 +4,7 @@ import {
 } from "@/components/modules/editor/editor-interfaces";
 
 export interface PageItemParameters {
-  editor: string;
+  editorContent: string;
   label: string;
   url: string;
   key?: string;
@@ -22,13 +22,13 @@ interface TabItemParameters {
 export class PageItem implements PanelMenuItem {
   key: string;
   uri: URL;
-  editor: string;
+  editorContent: string;
   label: string;
   items: Array<PageItem>;
   icon?: string;
   constructor(input: PageItemParameters) {
     this.key = input.key ? input.key : input.url;
-    this.editor = input.editor;
+    this.editorContent = input.editorContent;
     this.uri = new URL(input.url);
     this.label = input.label;
     this.icon = "pi pi-fw pi-file";
