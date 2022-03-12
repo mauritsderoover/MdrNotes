@@ -45,7 +45,7 @@ export default defineComponent({
         if (!getDefaultSession().info.isLoggedIn) {
           login({
             oidcIssuer: this.issuers[issuer],
-            redirectUrl: "https://mdr-tools.com",
+            redirectUrl: `${process.env.VUE_APP_HOST}/callback`,
           }).then(() => {
             this.setLoginInformation(getDefaultSession().info);
           });
