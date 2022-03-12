@@ -42,7 +42,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .editor {
   display: flex;
   flex-direction: column;
@@ -131,7 +131,7 @@ export default defineComponent({
 }
 </style>
 
-<style scoped lang="scss">
+<style lang="scss">
 .ProseMirror {
   min-height: 400px;
 }
