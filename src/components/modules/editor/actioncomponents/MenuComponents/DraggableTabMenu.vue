@@ -18,8 +18,12 @@
             :key="index"
             :class="getItemClass(element, index)"
             :style="element.style"
+            @click="catchClickEvent($event, element, index)"
           >
-            <div :class="getItemClass(element, index)" :style="element.style"  @click="catchClickEvent($event, element, index)">
+            <div
+              :class="getItemClass(element, index)"
+              :style="element.style"
+            >
               <template v-if="!$slots.element">
                 <router-link
                   v-if="element.to && !disabled(element)"
@@ -398,6 +402,10 @@ export default defineComponent({
 
 .p-tabmenu-nav a:focus {
   z-index: 1;
+}
+
+.p-tabmenu-nav a:hover {
+  background-color: black;
 }
 
 .p-tabmenu-nav .p-menuitem-text {

@@ -14,7 +14,7 @@
           v-if="visible(element)"
           :class="getPanelClass(element)"
           :style="element.style"
-          @click="catchClickEvent($event, element, index)"
+
         >
           <div :class="getHeaderClass(element)" :style="element.style">
             <template v-if="!$slots.element">
@@ -47,6 +47,7 @@
                 :tabindex="disabled(element) ? null : '0'"
                 :aria-expanded="isActive(element)"
                 :aria-controls="ariaId + '_content'"
+                @click="catchClickEvent($event, element, index)"
                 @contextmenu="onImageRightClick($event, element, index)"
               >
                 <span
@@ -70,7 +71,7 @@
                     :ref="'input_' + encodeURI(element.key)"
                     v-model="element.label"
                     type="text"
-                    class="p-menuitem-text"
+                    class="p-menuitem-text p-menuitem-input"
                     :placeholder="element.label"
                     @keydown.enter="abortLabelChange"
                   />
@@ -93,6 +94,7 @@
                   class="p-panelmenu-root-submenu"
                   layer="sublayer"
                   :template="$slots.element"
+                  section-identifier="tester"
                   :expanded-keys="expandedKeys"
                   :exact="exact"
                   :submenu="true"
@@ -128,6 +130,7 @@ import {
   BaseItem,
 } from "@/components/modules/editor/editor-interfaces";
 import { PageItem } from "@/components/modules/editor/editor-classes";
+import component from "*.vue";
 
 export default defineComponent({
   name: "DraggablePanelMenu",
@@ -395,6 +398,9 @@ export default defineComponent({
         : item === this.activeItem;
     },
     isDoubleClickedItem(item: any) {
+      console.log("this is doubleClickedItem", this.doubleClickedItem);
+      console.log("this is item", item);
+      console.log("this is the result", compareObject(item, this.doubleClickedItem));
       return compareObject(item, this.doubleClickedItem);
     },
     processDragEnd(): void {

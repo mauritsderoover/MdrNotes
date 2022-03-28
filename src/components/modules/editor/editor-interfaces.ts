@@ -26,7 +26,10 @@ export type Section = BaseItem;
  * @alias: A PanelMenuItem is an alias for a page and a page-group
  */
 export interface PanelMenuItem extends BaseItem {
-  editor: string;
+  /**
+   * EditorContent is a string containing HTML Tags and content
+   */
+  editorContent: string;
   items: Array<PanelMenuItem>;
 }
 

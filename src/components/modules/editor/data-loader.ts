@@ -280,7 +280,7 @@ export default class DataLoader {
           key: pageIdentifier,
           url: `${this.rootUrl}${pageIdentifier}`,
           label: "SomeRandomPage",
-          editor: "",
+          editorContent: "",
         })
       );
     }
@@ -296,7 +296,7 @@ export default class DataLoader {
           label: getTitle(value),
           key: retrieveIdentifier(url),
           url: url,
-          editor: getEditorContent(getPageText(value)),
+          editorContent: getEditorContent(getPageText(value)),
         })
       );
     });
@@ -360,7 +360,7 @@ export default class DataLoader {
           label: "New Page",
           url: this.rootUrl + pageIdentifier,
           key: pageIdentifier,
-          editor: "",
+          editorContent: "",
         }),
       ];
       return sectionIdentifier;
@@ -382,7 +382,7 @@ export default class DataLoader {
         label: "New Page",
         url: this.rootUrl + pageIdentifier,
         key: pageIdentifier,
-        editor: "",
+        editorContent: "",
       })
     );
   }

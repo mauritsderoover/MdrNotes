@@ -4,6 +4,7 @@ import MainDashboardSolidData from "@/components/modules/editor/MainDashboardSol
 import Callback from "@/components/genericcomponents/callback/Callback.vue";
 import { getDefaultSession, login } from "@inrupt/solid-client-authn-browser";
 import NotFound from "@/components/genericcomponents/notfound/NotFound.vue";
+import LogOut from "@/components/genericcomponents/logout/LogOut.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -26,16 +27,11 @@ const routes: Array<RouteRecordRaw> = [
     name: "Callback",
     component: Callback,
   },
-  // {
-  //   path: "/doodle",
-  //   name: "Doodle",
-  //   component: doodle,
-  // },
-  // {
-  //   path: "/forms",
-  //   name: "Forms",
-  //   component: forms,
-  // },
+  {
+    path: "/logout",
+    name: "Logout",
+    component: LogOut,
+  },
 ];
 
 const router = createRouter({
