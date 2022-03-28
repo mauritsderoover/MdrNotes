@@ -44,6 +44,9 @@ import ListItem from "@tiptap/extension-list-item";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import OrderedList from "@tiptap/extension-ordered-list";
+import Bold from "@tiptap/extension-bold";
+import Italic from "@tiptap/extension-italic";
+import Heading from "@tiptap/extension-heading";
 // import MenuBar from "@/components/modules/editor/actioncomponents/EditorComponents/MenuBar.vue";
 import { Editor, EditorContent } from "@tiptap/vue-3";
 import MenuBarProposal from "@/components/modules/editor/actioncomponents/EditorComponents/MenuBar.vue";
@@ -69,11 +72,14 @@ export default defineComponent({
         extensions: [
           Document,
           Paragraph,
+          Heading,
           Text,
           TaskList,
           TaskItem.configure({
             nested: true,
           }),
+          Bold,
+          Italic,
           BulletList,
           OrderedList,
           ListItem,
