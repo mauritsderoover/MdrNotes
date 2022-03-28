@@ -11,10 +11,13 @@
   </button>
 </template>
 
-<script lang="js">
+<script lang="ts">
+// eslint-disable-next-line
+// @ts-ignore
 import remixiconUrl from "remixicon/fonts/remixicon.symbol.svg";
+import { defineComponent } from "vue";
 
-export default {
+export default defineComponent({
   props: {
     icon: {
       type: String,
@@ -36,13 +39,12 @@ export default {
       default: null,
     },
   },
-
   data() {
     return {
       remixiconUrl,
     };
   },
-};
+});
 </script>
 
 <style lang="scss">
