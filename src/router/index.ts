@@ -32,16 +32,6 @@ const routes: Array<RouteRecordRaw> = [
     name: "Logout",
     component: LogOut,
   },
-  // {
-  //   path: "/doodle",
-  //   name: "Doodle",
-  //   component: doodle,
-  // },
-  // {
-  //   path: "/forms",
-  //   name: "Forms",
-  //   component: forms,
-  // },
 ];
 
 const router = createRouter({

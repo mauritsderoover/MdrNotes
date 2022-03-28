@@ -1,35 +1,33 @@
 <template>
-  <div>
-    <editor-notes
-      v-if="activeMenuElement"
-      v-model="activeMenuElement.editorContent"
-    >
-      <template #tabs>
-        <draggable-tab-menu
-          v-model:activeIndex="activeIndex"
-          :model="tabItems"
-          :new-tab="newTab"
-          @tab-change="updateCurrentTab"
-          @add-tab="addTab"
-          @label-changed="labelChange"
-          @drag-ended="saveAllPositions"
-          @delete-item="deleteSection"
-        />
-      </template>
-      <template #panelMenu>
-        <draggable-panel-menu
-          :model="panelMenuItems[currentTab]"
-          :section-identifier="currentTab"
-          layer="mainItem"
-          @tab-change="updateMenuItem"
-          @add-menu-element="addMenuElement"
-          @label-changed="labelChange"
-          @drag-ended="saveAllPositions"
-          @delete-item="deletePageNote"
-        />
-      </template>
-    </editor-notes>
-  </div>
+  <editor-notes
+    v-if="activeMenuElement"
+    v-model="activeMenuElement.editorContent"
+  >
+    <template #tabs>
+      <draggable-tab-menu
+        v-model:activeIndex="activeIndex"
+        :model="tabItems"
+        :new-tab="newTab"
+        @tab-change="updateCurrentTab"
+        @add-tab="addTab"
+        @label-changed="labelChange"
+        @drag-ended="saveAllPositions"
+        @delete-item="deleteSection"
+      />
+    </template>
+    <template #panelMenu>
+      <draggable-panel-menu
+        :model="panelMenuItems[currentTab]"
+        :section-identifier="currentTab"
+        layer="mainItem"
+        @tab-change="updateMenuItem"
+        @add-menu-element="addMenuElement"
+        @label-changed="labelChange"
+        @drag-ended="saveAllPositions"
+        @delete-item="deletePageNote"
+      />
+    </template>
+  </editor-notes>
 </template>
 
 <script lang="ts">
@@ -141,11 +139,6 @@ export default defineComponent({
       if (this.activeMenuElement) {
         this.currentMenuPanelItem = this.activeMenuElement.key;
       }
-    },
-    logUserOut(): void {
-      logout().then(() => {
-        this.$router.push("/");
-      });
     },
     updateMenuItem(event: { item: PageItem }) {
       this.activeMenuElement = event.item;
