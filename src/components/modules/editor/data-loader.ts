@@ -291,7 +291,7 @@ export default class DataLoader {
       const position = getPosition(value);
       this.panelMenuItems[sectionIdentifier].splice(
         Number(position),
-        1,
+        0,
         new PageItem({
           label: getTitle(value),
           key: retrieveIdentifier(url),
