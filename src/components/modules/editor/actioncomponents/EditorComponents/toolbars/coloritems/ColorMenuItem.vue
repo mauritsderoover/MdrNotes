@@ -23,7 +23,7 @@
 // @ts-ignore
 import remixiconUrl from "remixicon/fonts/remixicon.symbol.svg";
 import OverlayPanel from "primevue/overlaypanel";
-import ColorMenu from "@/components/modules/editor/actioncomponents/EditorComponents/ColorPanel.vue";
+import ColorMenu from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/coloritems/ColorPanel.vue";
 import { defineComponent } from "vue";
 
 export default defineComponent({
