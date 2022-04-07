@@ -6,7 +6,7 @@ export interface MiniEditorInterface {
   container: null | HTMLDivElement;
   parentContainer: null | HTMLDivElement;
   dragging: null | boolean;
-  documentDragListener: null | EventListenerOrEventListenerObject;
+  documentDragListener: null | { (event: MouseEvent): void };
   documentDragEndListener: null | EventListenerOrEventListenerObject;
   lastPageX: null | number;
   lastPageY: null | number;
