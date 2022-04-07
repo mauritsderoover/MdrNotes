@@ -110,7 +110,7 @@ export default defineComponent({
       documentDragEndListener: null,
       lastPageX: null,
       lastPageY: null,
-      keepInViewport: false,
+      keepInViewport: true,
       minX: 0,
       minY: 0,
     };
@@ -160,59 +160,28 @@ export default defineComponent({
           this.lastPageX &&
           this.lastPageY
         ) {
-          const parentContainer: HTMLElement = DomHandler.getParents(
-            this.container
-          )[0];
-          console.log("this is event", event);
           let width = DomHandler.getOuterWidth(this.container, false);
           let height = DomHandler.getOuterHeight(this.container, false);
           let deltaX = event.pageX - this.lastPageX;
           let deltaY = event.pageY - this.lastPageY;
-          let offset = this.container.getBoundingClientRect();
-          // let leftPos = offset.left + parentContainer.offsetLeft + deltaX;
-          // let topPos = offset.top + parentContainer.offsetTop + deltaY;
-          let leftPos = event.clientX - parentContainer.offsetLeft;
-          let topPos = event.clientY - parentContainer.offsetTop;
+          let leftPos = parseInt(this.container.style.left) + deltaX;
+          let topPos = parseInt(this.container.style.top) + deltaY;
           let viewport = DomHandler.getViewport();
-
-          console.log("this is event.pageX", event.pageX);
-          console.log("this is event.pageY", event.pageY);
-          console.log("this is event.offsetX", event.offsetY);
-          console.log("this is event.offSetY", event.offsetY);
-          console.log("this is lastPageX", this.lastPageX);
-          console.log("this is lastPageY", this.lastPageY);
-          console.log("this is deltaX", deltaX);
-          console.log("this is deltaY", deltaY);
-          console.log("this is offset", offset);
-          console.log("this is leftPos", leftPos);
-          console.log("this is topPos", topPos);
-
-          this.minX = parentContainer.offsetLeft;
-          this.minY = parentContainer.offsetTop;
-          console.log("this is parentContainer.offSetLeft", this.minX);
-          console.log("this is parentContainer.offsetTop", this.minY);
-
-          // this.container.style.position = "fixed";
 
           if (this.keepInViewport) {
             if (leftPos >= this.minX && leftPos + width < viewport.width) {
               this.lastPageX = event.pageX;
               this.$emit("update:left", leftPos + "px");
-              // this.container.style.left = leftPos + "px";
             }
-
             if (topPos >= this.minY && topPos + height < viewport.height) {
               this.lastPageY = event.pageY;
               this.$emit("update:top", topPos + "px");
-              // this.container.style.top = topPos + "px";
             }
           } else {
-            this.lastPageX = event.offsetX;
-            this.lastPageY = event.offsetY;
+            this.lastPageX = event.clientX;
+            this.lastPageY = event.clientY;
             this.$emit("update:left", leftPos + "px");
             this.$emit("update:top", topPos + "px");
-
-            // this.container.style.top = event.offsetY + "px";
           }
         }
       };
@@ -228,7 +197,7 @@ export default defineComponent({
       }
     },
     bindDocumentDragEndListener() {
-      this.documentDragEndListener = (event) => {
+      this.documentDragEndListener = () => {
         if (this.dragging) {
           this.dragging = false;
           // DomHandler.removeClass(document.body, "p-unselectable-text");
@@ -253,7 +222,7 @@ export default defineComponent({
 
 <style lang="scss">
 .editor-wrapper {
-  border: 5px solid;
+  border: 10px solid;
 }
 .editor {
   display: flex;
