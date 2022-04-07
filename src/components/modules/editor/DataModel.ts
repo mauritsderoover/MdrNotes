@@ -168,7 +168,7 @@ export async function processPage(url: string): Promise<PageItem> {
     label: getTitle(thing),
     key: retrieveIdentifier(url),
     url: url,
-    editorContent: getEditorContent(getPageText(thing)),
+    editorContent: [],
   });
 }
 
@@ -205,7 +205,7 @@ async function processSection(sectionUrl: string): Promise<PanelMenuItem[]> {
         key: pageIdentifier,
         url: `${ROOT_URL} + ${pageIdentifier}`,
         label: "SomeRandomPage",
-        editorContent: "",
+        editorContent: [],
       })
     );
     return section;
@@ -431,7 +431,7 @@ export async function newSection(
         label: "New Page",
         url: ROOT_URL + pageIdentifier,
         key: pageIdentifier,
-        editorContent: "",
+        editorContent: [],
       }),
     ],
   };
@@ -446,7 +446,7 @@ export async function newPage(sectionIdentifier: string): Promise<PageItem> {
     label: "New Page",
     url: ROOT_URL + pageIdentifier,
     key: pageIdentifier,
-    editorContent: "",
+    editorContent: [],
   });
 }
 
