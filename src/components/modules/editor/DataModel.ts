@@ -249,7 +249,7 @@ export function hasPages(thing: ThingPersisted): boolean {
 export function getNoteContentUrl(thing: Thing): Array<string> {
   const noteContentObjects = getPredicate(thing, NOTETAKING.hasPageContent);
   if (Array.isArray(noteContentObjects)) return noteContentObjects;
-  throw new Error("Impossible option has been reached");
+  return [];
 }
 
 export function getPredicate(
