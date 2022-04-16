@@ -6,12 +6,12 @@
     :editor="editor"
     class="editor-wrapper"
     @mousedown="initDrag"
-    @click="testFunction"
+    @click="editorClicked"
   />
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, PropType } from "vue";
 
 import { EditorContent } from "@tiptap/vue-3";
 import { DomHandler } from "primevue/utils";
@@ -29,23 +29,26 @@ export default defineComponent({
       type: String,
       default: "",
     },
-    testEditor: {
-      type: Object,
+    pageContent: {
+      type: Object as PropType<PageContent>,
       default: null,
     },
     left: {
-      type: String,
+      type: Number,
+      require: true,
     },
     top: {
-      type: String,
+      type: Number,
+      require: true,
     },
   },
   emits: [
     "update:modelValue",
-    "update:testEditor",
     "setCurrentEditor",
     "update:left",
     "update:top",
+    "removeEditor",
+    "contentUpdated",
   ],
   data(): MiniEditorInterface {
     return {
@@ -66,6 +69,7 @@ export default defineComponent({
   },
   watch: {
     modelValue(value) {
+      console.log("this has been called in modelValue watcher");
       const isSame = this.editor.getHTML() === value;
 
       if (isSame) {
@@ -76,12 +80,24 @@ export default defineComponent({
     },
   },
   mounted() {
+    this.editor.commands.setContent(this.modelValue, false);
     this.editor.on("update", () => {
-      this.$emit("update:modelValue", this.editor.getHTML());
+      const content = this.editor.getHTML();
+      this.$emit("update:modelValue", content);
+      this.$emit("contentUpdated", this.pageContent);
+    });
+    this.editor.on("focus", () => {
+      this.$emit("setCurrentEditor", this.editor);
+      this.editorFocused = true;
+    });
+    this.editor.on("blur", () => {
+      this.editorFocused = false;
+      if (!this.modelValue) {
+        this.$emit("removeEditor");
+      }
     });
     this.bindDocumentDragListener();
     this.bindDocumentDragEndListener();
-    this.$emit("update:testEditor", this.editor);
   },
   beforeUnmount() {
     this.editor.destroy();
@@ -94,9 +110,8 @@ export default defineComponent({
         this.lastPageY = event.pageY;
       }
     },
-    testFunction(test: any): void {
-      this.$emit("setCurrentEditor", this.testEditor);
-      console.log("this is test after click", test);
+    editorClicked(): void {
+      this.$emit("setCurrentEditor", this.editor);
     },
     containerRef(el: any) {
       if (el) this.container = el.rootEl;
@@ -120,17 +135,17 @@ export default defineComponent({
           if (this.keepInViewport) {
             if (leftPos >= this.minX && leftPos + width < viewport.width) {
               this.lastPageX = event.pageX;
-              this.$emit("update:left", leftPos + "px");
+              this.$emit("update:left", leftPos);
             }
             if (topPos >= this.minY && topPos + height < viewport.height) {
               this.lastPageY = event.pageY;
-              this.$emit("update:top", topPos + "px");
+              this.$emit("update:top", topPos);
             }
           } else {
             this.lastPageX = event.clientX;
             this.lastPageY = event.clientY;
-            this.$emit("update:left", leftPos + "px");
-            this.$emit("update:top", topPos + "px");
+            this.$emit("update:left", leftPos);
+            this.$emit("update:top", topPos);
           }
         }
       };
@@ -149,6 +164,7 @@ export default defineComponent({
       this.documentDragEndListener = () => {
         if (this.dragging) {
           this.dragging = false;
+          this.$emit("contentUpdated", this.pageContent);
           // DomHandler.removeClass(document.body, "p-unselectable-text");
 
           // this.$emit("dragend", event);

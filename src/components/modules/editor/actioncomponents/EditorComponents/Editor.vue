@@ -1,5 +1,5 @@
 <template>
-  <div class="grid nested-grid p-0" id="editor">
+  <div id="editor" class="grid nested-grid p-0">
     <div class="col-12 p-0 row-shrink">
       <menu-bar-proposal v-if="editor" class="editor_header" :editor="editor" />
     </div>
@@ -13,18 +13,21 @@
       <div
         id="editor-container"
         class="col-10 editor-container"
-        @click="createNewEditor"
         style="position: relative"
+        @click="createNewEditor"
       >
         <mini-editor
           v-for="editorObj of editors"
           :key="editorObj"
           v-model:left="editorObj.left"
           v-model:top="editorObj.top"
-          v-model:test-editor="editorObj.contentEditor"
+          v-model="editorObj.content"
+          :page-content="editorObj"
           style="position: absolute"
-          :style="{ left: editorObj.left, top: editorObj.top }"
+          :style="{ left: `${editorObj.left}px`, top: `${editorObj.top}px` }"
           @set-current-editor="editor = $event"
+          @remove-editor="removeEditor(editorObj)"
+          @content-updated="$emit('contentUpdated', $event)"
         />
       </div>
     </div>
@@ -32,11 +35,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, PropType } from "vue";
 import MenuBarProposal from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/MenuBar.vue";
 import MiniEditor from "@/components/modules/editor/actioncomponents/EditorComponents/MiniEditor.vue";
 import { Editor } from "@tiptap/vue-3";
 import { PageContent } from "@/components/modules/editor/editor-classes";
+import createEditor from "@/components/modules/editor/actioncomponents/EditorComponents/EditorClass";
 export default defineComponent({
   name: "EditorNotes",
   components: {
@@ -46,42 +50,50 @@ export default defineComponent({
     // MenuBar,
   },
   props: {
-    modelValue: {
-      type: String,
-      default: "",
+    editors: {
+      type: Object as PropType<Array<PageContent>>,
+      default: new Array<PageContent>(),
     },
   },
+  emits: ["update:editors", "contentUpdated"],
   data(): {
     editor: Editor | null;
-    editors: Array<PageContent>;
   } {
     return {
       editor: null,
-      editors: [],
     };
   },
-  emits: ["update:modelValue"],
+  mounted() {
+    if (this.editor === null) this.editor = createEditor();
+  },
   methods: {
-    testFunction(event: any): void {
-      console.log("the drag is called", event);
+    removeEditor(pageContent: PageContent): void {
+      const index = this.editors.findIndex(
+        (value) => value.identifier === pageContent.identifier
+      );
+      if (index !== -1) {
+        const editorsTemp = this.editors;
+        editorsTemp.splice(index, 1);
+        this.$emit("update:editors", editorsTemp);
+      }
     },
     createNewEditor(event: PointerEvent) {
       const id = (event.composedPath().at(0) as HTMLElement).id;
       const selection = window.getSelection();
-      console.log("this is ID", id)
-      console.log("this has been executed", event);
       if (
         id &&
         id === "editor-container" &&
         (!selection || selection.type !== "Range")
       ) {
-        this.editors.push(
+        const editorsTemp = this.editors;
+        editorsTemp.push(
           new PageContent({
-            top: event.offsetY + "px",
-            left: event.offsetX + "px",
+            top: event.offsetY,
+            left: event.offsetX,
             content: "",
           })
         );
+        this.$emit("update:editors", editorsTemp);
       }
     },
   },

@@ -176,6 +176,7 @@ export default defineComponent({
     "label-changed",
     "dragEnded",
     "delete-item",
+    "load-item",
   ],
   data(): DraggablePanelMenu {
     return {
@@ -207,6 +208,13 @@ export default defineComponent({
         {
           label: "Add subpage",
           icon: "pi pi-fw pi-calendar",
+        },
+        {
+          label: "Load item",
+          icon: "pi pi-fw pi-home",
+          command: () => {
+            this.loadItem();
+          },
         },
       ],
     };
@@ -250,6 +258,9 @@ export default defineComponent({
   methods: {
     deleteAction(): void {
       this.$emit("delete-item", this.rightClickedItem);
+    },
+    loadItem(): void {
+      this.$emit("load-item", this.rightClickedItem);
     },
     changeMenuItem(event: any) {
       this.$emit("tab-change", event);
@@ -400,7 +411,10 @@ export default defineComponent({
     isDoubleClickedItem(item: any) {
       console.log("this is doubleClickedItem", this.doubleClickedItem);
       console.log("this is item", item);
-      console.log("this is the result", compareObject(item, this.doubleClickedItem));
+      console.log(
+        "this is the result",
+        compareObject(item, this.doubleClickedItem)
+      );
       return compareObject(item, this.doubleClickedItem);
     },
     processDragEnd(): void {

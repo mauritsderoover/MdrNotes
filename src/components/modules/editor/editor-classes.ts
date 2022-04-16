@@ -2,7 +2,7 @@ import {
   BaseItem,
   PanelMenuItem,
 } from "@/components/modules/editor/editor-interfaces";
-import { Editor } from "@tiptap/vue-3";
+import { makeId } from "@/components/modules/editor/DataModel";
 
 export interface PageItemParameters {
   editorContent: Array<PageContent>;
@@ -19,21 +19,19 @@ interface TabItemParameters {
 
 export class PageContent {
   identifier: string;
-  left: string;
-  top: string;
+  left: number;
+  top: number;
   content: string;
-  contentEditor: Editor | null;
 
   constructor(
     input: Omit<PageContent, "contentEditor" | "identifier"> & {
       identifier?: string;
     }
   ) {
-    this.identifier = input.identifier ?? "identifier";
+    this.identifier = input.identifier ?? makeId();
     this.left = input.left;
     this.top = input.top;
     this.content = input.content;
-    this.contentEditor = null;
   }
 }
 

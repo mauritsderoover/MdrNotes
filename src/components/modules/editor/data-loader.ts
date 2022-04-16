@@ -14,8 +14,11 @@ import {
 } from "@inrupt/solid-client";
 import { getData } from "@/components/genericcomponents/utils/utils";
 import {
+  getDistanceLeft,
+  getDistanceTop,
   getEditorContent,
   getNoteBook,
+  getNoteContentUrl,
   getPageText,
   getPageUrls,
   getPosition,
@@ -41,7 +44,11 @@ import {
   Section,
   TabItems,
 } from "@/components/modules/editor/editor-interfaces";
-import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
+import {
+  PageContent,
+  PageItem,
+  TabItem,
+} from "@/components/modules/editor/editor-classes";
 import { DCTERMS, RDF } from "@inrupt/vocab-common-rdf";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
@@ -95,16 +102,14 @@ export default class DataLoader {
   }
 
   checkRequirements(): boolean {
-    if (
+    return (
       this.tabItems &&
       this.tabItems.length > 0 &&
       this.tabItems[0] !== undefined &&
       this.panelMenuItems &&
       this.panelMenuItems[this.tabItems[0].key] &&
       this.panelMenuItems[this.tabItems[0].key].length > 0
-    )
-      return true;
-    else return false;
+    );
   }
 
   async getRootDataSet(): Promise<void> {
@@ -280,26 +285,58 @@ export default class DataLoader {
           key: pageIdentifier,
           url: `${this.rootUrl}${pageIdentifier}`,
           label: "SomeRandomPage",
-          editorContent: "",
+          editorContent: [],
         })
       );
     }
   }
 
   processPage(url: string, sectionIdentifier: string): void {
-    getThingFromSolidPod(url).then((value) => {
-      const position = getPosition(value);
+    getData(url).then((dataSet) => {
+      if (!dataSet) throw new Error("No dataset could be found");
+      const pageThing = getThing(dataSet, url);
+      if (!pageThing) throw new Error("No PageThing could be found");
+      const position = parseInt(getPosition(pageThing));
+      const editorContentArray = this.getEditorContentArray(pageThing, dataSet);
+      console.log("this has been called with position", position);
       this.panelMenuItems[sectionIdentifier].splice(
-        Number(position),
+        position,
         0,
         new PageItem({
-          label: getTitle(value),
+          label: getTitle(pageThing),
           key: retrieveIdentifier(url),
           url: url,
-          editorContent: getEditorContent(getPageText(value)),
+          editorContent: editorContentArray,
         })
       );
+      console.log(
+        "this is panelMenuItems",
+        this.panelMenuItems[sectionIdentifier]
+      );
     });
+  }
+
+  getEditorContentArray(
+    thing: ThingPersisted,
+    dataset: SolidDataset
+  ): PageContent[] {
+    const editorContentArray = new Array<PageContent>();
+    const noteContentUrls = getNoteContentUrl(thing);
+    for (const noteContentUrl of noteContentUrls) {
+      const editorContentThing = getThing(dataset, noteContentUrl);
+      if (editorContentThing) {
+        editorContentArray.push(
+          new PageContent({
+            identifier: retrieveIdentifier(noteContentUrl),
+            top: getDistanceTop(editorContentThing),
+            left: getDistanceLeft(editorContentThing),
+            content: getEditorContent(getPageText(editorContentThing)),
+          })
+        );
+      }
+    }
+    console.log("this is EditorContentArray", editorContentArray);
+    return editorContentArray;
   }
 
   async createNoteTakingElement(
@@ -360,7 +397,7 @@ export default class DataLoader {
           label: "New Page",
           url: this.rootUrl + pageIdentifier,
           key: pageIdentifier,
-          editorContent: "",
+          editorContent: [],
         }),
       ];
       return sectionIdentifier;
@@ -382,7 +419,7 @@ export default class DataLoader {
         label: "New Page",
         url: this.rootUrl + pageIdentifier,
         key: pageIdentifier,
-        editorContent: "",
+        editorContent: [],
       })
     );
   }

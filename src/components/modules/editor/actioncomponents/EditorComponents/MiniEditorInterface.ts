@@ -1,7 +1,8 @@
-import { Editor, HTMLElement } from "@tiptap/vue-3";
+import { Editor } from "@tiptap/vue-3";
 
 export interface MiniEditorInterface {
   editor: Editor;
+  editorFocused: boolean;
   documentKeydownListener: null | EventListenerOrEventListenerObject;
   container: null | HTMLDivElement;
   parentContainer: null | HTMLDivElement;
