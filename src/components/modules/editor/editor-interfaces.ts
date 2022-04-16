@@ -1,5 +1,5 @@
 import { Editor } from "@tiptap/vue-3";
-import { PageItem } from "@/components/modules/editor/editor-classes";
+import { PageContent, PageItem } from "@/components/modules/editor/editor-classes";
 import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 import DataLoader from "@/components/modules/editor/data-loader";
 
@@ -29,7 +29,7 @@ export interface PanelMenuItem extends BaseItem {
   /**
    * EditorContent is a string containing HTML Tags and content
    */
-  editorContent: string;
+  editorContent: Array<PageContent>;
   items: Array<PanelMenuItem>;
 }
 

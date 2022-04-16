@@ -18,8 +18,8 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import TabMenu from "primevue/tabmenu";
-import Insert from "./toolbars/InsertBar.vue";
-import Settings from "./toolbars/SettingsBar.vue";
+import Insert from "./InsertBar.vue";
+import Settings from "./SettingsBar.vue";
 import StartBar from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/StartBar.vue";
 import { Editor } from "@tiptap/vue-3";
 import SettingsBar from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/SettingsBar.vue";

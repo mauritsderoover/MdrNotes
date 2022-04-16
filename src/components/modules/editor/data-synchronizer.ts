@@ -5,6 +5,9 @@ import {
   getThing,
   saveSolidDatasetAt,
   setThing,
+  ThingBuilder,
+  ThingLocal,
+  ThingPersisted,
 } from "@inrupt/solid-client";
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import { fetch } from "@inrupt/solid-client-authn-browser";
@@ -14,13 +17,14 @@ import {
   isSection,
   retrieveIdentifier,
 } from "@/components/modules/editor/DataModel";
-import { DCTERMS, LDP } from "@inrupt/vocab-common-rdf";
+import { DCTERMS, LDP, RDF } from "@inrupt/vocab-common-rdf";
 import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
+import { PageContent } from "@/components/modules/editor/editor-classes";
 
 export default class DataSynchronizer {
   rootUrl: string;
-  changes: Record<string, string[]>;
-  activeSync: Record<string, boolean>;
+  changes: Record<string, Record<string, Array<PageContent>>>;
+  activeSync: Record<string, Record<string, boolean>>;
 
   constructor() {
     this.rootUrl = getRootUrl();
@@ -28,14 +32,20 @@ export default class DataSynchronizer {
     this.activeSync = {};
   }
 
-  addContentChange(pageUrl: string, content: string) {
-    if (!this.changes[pageUrl]) this.changes[pageUrl] = [];
-    if (this.activeSync[pageUrl] === undefined)
-      this.activeSync[pageUrl] = false;
-    this.changes[pageUrl].push(content);
+  addContentChange(pageUrl: string, pageContent: PageContent) {
+    if (!this.changes[pageUrl]) this.changes[pageUrl] = {};
+    if (!this.changes[pageUrl][pageContent.identifier])
+      this.changes[pageUrl][pageContent.identifier] = [];
     if (!this.activeSync[pageUrl]) {
-      this.activeSync[pageUrl] = true;
-      this.savePageContent(pageUrl);
+      this.activeSync[pageUrl] = {};
+      this.activeSync[pageUrl][pageContent.identifier] = false;
+    } else if (this.activeSync[pageUrl][pageContent.identifier] === undefined) {
+      this.activeSync[pageUrl][pageContent.identifier] = false;
+    }
+    this.changes[pageUrl][pageContent.identifier].push(pageContent);
+    if (!this.activeSync[pageUrl][pageContent.identifier]) {
+      this.activeSync[pageUrl][pageContent.identifier] = true;
+      this.savePageContent(pageUrl, pageContent);
     }
   }
 
@@ -100,6 +110,28 @@ export default class DataSynchronizer {
     });
   }
 
+  storeMiniEditor(pageIdentifier: string): void {
+    getData(this.getURL(pageIdentifier)).then(async (value) => {
+      console.log("this is the solidDataSet", value);
+      const miniEditor = buildThing()
+        .setUrl(RDF.type, NOTETAKING.NoteContent)
+        .setInteger(NOTETAKING.distanceTop, 300)
+        .setInteger(NOTETAKING.distanceLeft, 300)
+        .setStringNoLocale(SCHEMA.Text, "")
+        .build();
+      if (value) {
+        const response = await saveSolidDatasetAt(
+          this.getURL(pageIdentifier),
+          setThing(value, miniEditor),
+          {
+            fetch,
+          }
+        );
+        console.log("this is the response", response);
+      }
+    });
+  }
+
   getURL(identifier: string): string {
     let URL = this.rootUrl;
     if (identifier.includes("http")) URL = URL + retrieveIdentifier(identifier);
@@ -136,8 +168,24 @@ export default class DataSynchronizer {
     deleteSolidDataset(URL, { fetch }).then(() => console.log("tob e done"));
   }
 
-  savePageContent(pageIdentifier: string): void {
-    const content = this.changes[pageIdentifier].shift();
+  getLastContent(
+    pageIdentifier: string,
+    contentIdentifier: string
+  ): PageContent {
+    const length = this.changes[pageIdentifier][contentIdentifier].length;
+    const changes = this.changes[pageIdentifier][contentIdentifier].splice(
+      0,
+      length
+    );
+    return changes[length - 1];
+  }
+
+  // saveNoteEditorPosition(): void {}
+
+  savePageContent(pageIdentifier: string, pageContent: PageContent): void {
+    console.log("this is pageIdentifier", pageIdentifier);
+    console.log("this is pageContent", pageContent);
+    const content = this.getLastContent(pageIdentifier, pageContent.identifier);
     let URL = this.rootUrl;
     if (pageIdentifier.includes("http"))
       URL = URL + retrieveIdentifier(pageIdentifier);
@@ -145,21 +193,49 @@ export default class DataSynchronizer {
     if (content) {
       getData(URL).then((dataSet) => {
         if (dataSet) {
-          let thing = getThing(dataSet, URL);
-          if (!thing) throw new Error("No thing could be retrieved");
-          if (!isPage(thing)) throw new Error("The thing is no page Thing");
-          thing = buildThing(thing)
-            .setStringNoLocale(SCHEMA.Text, content)
-            .build();
-          saveSolidDatasetAt(URL, setThing(dataSet, thing), {
-            fetch,
-          }).then(() => {
-            if (this.changes[pageIdentifier].length === 0) {
-              this.activeSync[pageIdentifier] = false;
+          let pageThing = getThing(dataSet, this.rootUrl + pageIdentifier);
+          if (!pageThing || !isPage(pageThing)) {
+            throw new Error("The thing is no page Thing or is null ");
+          } else {
+            let thing:
+              | ThingPersisted
+              | null
+              | ThingBuilder<ThingLocal>
+              | ThingBuilder<ThingPersisted> = getThing(
+              dataSet,
+              URL + `#${pageContent.identifier}`
+            );
+            if (!thing) {
+              thing = buildThing({ name: pageContent.identifier });
+              thing.setUrl(RDF.type, NOTETAKING.NoteContent);
+              pageThing = buildThing(pageThing)
+                .addUrl(
+                  NOTETAKING.hasPageContent,
+                  URL + `#${pageContent.identifier}`
+                )
+                .build();
+              dataSet = setThing(dataSet, pageThing);
             } else {
-              this.savePageContent(pageIdentifier);
+              thing = buildThing(thing);
             }
-          });
+            thing = thing
+              .setStringNoLocale(SCHEMA.Text, content.content)
+              .setInteger(NOTETAKING.distanceTop, content.top)
+              .setInteger(NOTETAKING.distanceLeft, content.left);
+            console.log("this is dataset before saving", dataSet);
+            saveSolidDatasetAt(URL, setThing(dataSet, thing.build()), {
+              fetch,
+            }).then(() => {
+              if (
+                this.changes[pageIdentifier][pageContent.identifier].length ===
+                0
+              ) {
+                this.activeSync[pageIdentifier][pageContent.identifier] = false;
+              } else {
+                this.savePageContent(pageIdentifier, pageContent);
+              }
+            });
+          }
         }
       });
     }

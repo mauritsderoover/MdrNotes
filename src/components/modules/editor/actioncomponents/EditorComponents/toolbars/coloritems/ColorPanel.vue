@@ -25,7 +25,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import ColorItem from "@/components/modules/editor/actioncomponents/EditorComponents/ColorItem.vue";
+import ColorItem from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/coloritems/ColorItem.vue";
 
 export default defineComponent({
   name: "ColorMenu",
