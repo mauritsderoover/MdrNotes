@@ -14,7 +14,6 @@
           v-if="visible(element)"
           :class="getPanelClass(element)"
           :style="element.style"
-
         >
           <div :class="getHeaderClass(element)" :style="element.style">
             <template v-if="!$slots.element">
@@ -195,25 +194,10 @@ export default defineComponent({
       inputElement: undefined,
       items: [
         {
-          label: "Add page",
-          icon: "pi pi-fw pi-home",
-        },
-        {
           label: "Delete page",
           icon: "pi pi-fw pi-home",
           command: () => {
             this.deleteAction();
-          },
-        },
-        {
-          label: "Add subpage",
-          icon: "pi pi-fw pi-calendar",
-        },
-        {
-          label: "Load item",
-          icon: "pi pi-fw pi-home",
-          command: () => {
-            this.loadItem();
           },
         },
       ],
@@ -409,12 +393,6 @@ export default defineComponent({
         : item === this.activeItem;
     },
     isDoubleClickedItem(item: any) {
-      console.log("this is doubleClickedItem", this.doubleClickedItem);
-      console.log("this is item", item);
-      console.log(
-        "this is the result",
-        compareObject(item, this.doubleClickedItem)
-      );
       return compareObject(item, this.doubleClickedItem);
     },
     processDragEnd(): void {

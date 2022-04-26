@@ -1,7 +1,11 @@
 <template>
   <div id="editor" class="grid nested-grid p-0">
     <div class="col-12 p-0 row-shrink">
-      <menu-bar-proposal v-if="editor" class="editor_header" :editor="editor" />
+      <menu-bar-proposal
+        v-if="editor"
+        class="m-1 editor_header"
+        :editor="editor"
+      />
     </div>
     <div class="col-12 p-0 row-shrink editor-tabs">
       <slot name="tabs"> </slot>
@@ -154,11 +158,16 @@ export default defineComponent({
 
   div.row-shrink {
     flex-grow: 0;
+    background: #cdd9d9;
   }
 
   div.row-expand {
     flex-grow: 1;
   }
+
+  //div.editor {
+  //  background: #cdd9d9;
+  //}
 
   div.editor-container {
     border: 2px solid #276cb2;

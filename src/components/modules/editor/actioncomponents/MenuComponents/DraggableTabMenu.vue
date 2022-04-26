@@ -20,10 +20,7 @@
             :style="element.style"
             @click="catchClickEvent($event, element, index)"
           >
-            <div
-              :class="getItemClass(element, index)"
-              :style="element.style"
-            >
+            <div :class="getItemClass(element, index)" :style="element.style">
               <template v-if="!$slots.element">
                 <router-link
                   v-if="element.to && !disabled(element)"
@@ -166,20 +163,11 @@ export default defineComponent({
       rightClickedItem: undefined,
       items: [
         {
-          label: "Add page",
-          icon: "pi pi-fw pi-home",
-        },
-        {
           label: "Delete page",
           icon: "pi pi-fw pi-home",
-          command: (event) => {
-            console.log("this is event in delete page", event);
+          command: () => {
             this.deleteAction();
           },
-        },
-        {
-          label: "Add subpage",
-          icon: "pi pi-fw pi-calendar",
         },
       ],
     };
@@ -227,11 +215,9 @@ export default defineComponent({
   },
   methods: {
     deleteAction(): void {
-      console.log("this is rightClickedItem", this.rightClickedItem);
       this.$emit("delete-item", this.rightClickedItem);
     },
     onImageRightClick(event: any, element: any) {
-      console.log("the function onImageRightClick has been executed");
       (this.$refs.menu as ContextMenu).show(event);
       this.rightClickedItem = element;
     },

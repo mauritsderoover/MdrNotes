@@ -15,7 +15,6 @@ export default defineComponent({
   },
   computed: {
     backGroundColor(): string {
-      console.log("we got here", this.color);
       return `{background-color: ${this.color}}`;
     },
   },

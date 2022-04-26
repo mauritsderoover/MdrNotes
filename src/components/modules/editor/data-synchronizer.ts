@@ -112,7 +112,6 @@ export default class DataSynchronizer {
 
   storeMiniEditor(pageIdentifier: string): void {
     getData(this.getURL(pageIdentifier)).then(async (value) => {
-      console.log("this is the solidDataSet", value);
       const miniEditor = buildThing()
         .setUrl(RDF.type, NOTETAKING.NoteContent)
         .setInteger(NOTETAKING.distanceTop, 300)
@@ -127,7 +126,6 @@ export default class DataSynchronizer {
             fetch,
           }
         );
-        console.log("this is the response", response);
       }
     });
   }
@@ -183,8 +181,6 @@ export default class DataSynchronizer {
   // saveNoteEditorPosition(): void {}
 
   savePageContent(pageIdentifier: string, pageContent: PageContent): void {
-    console.log("this is pageIdentifier", pageIdentifier);
-    console.log("this is pageContent", pageContent);
     const content = this.getLastContent(pageIdentifier, pageContent.identifier);
     let URL = this.rootUrl;
     if (pageIdentifier.includes("http"))
@@ -222,7 +218,6 @@ export default class DataSynchronizer {
               .setStringNoLocale(SCHEMA.Text, content.content)
               .setInteger(NOTETAKING.distanceTop, content.top)
               .setInteger(NOTETAKING.distanceLeft, content.left);
-            console.log("this is dataset before saving", dataSet);
             saveSolidDatasetAt(URL, setThing(dataSet, thing.build()), {
               fetch,
             }).then(() => {

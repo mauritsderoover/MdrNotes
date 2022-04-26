@@ -45,6 +45,8 @@ import {
 // import { IriString } from "@inrupt/solid-client/src/interfaces";
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
+import DataLoader from "@/components/modules/editor/data-loader";
+import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
 
 const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 
@@ -130,7 +132,8 @@ async function getSection(thing: Thing): Promise<Thing> {
   const sectionUrl = getSectionUrl(thing);
   const sectionDataSet = await getData(sectionUrl);
   if (sectionDataSet) return getThing(sectionDataSet, sectionUrl) as Thing;
-  throw new Error("noteBookDataSet does not exist");
+  // const dataLoader = new DataSynchronizer();
+  throw new Error("sectionDataSet does not exist");
 }
 
 function getSectionUrl(thing: Thing): string {
@@ -213,7 +216,6 @@ export function getDistanceLeft(thing: Thing): number {
 
 export function getDistanceTop(thing: Thing): number {
   const distanceTopSubject = getPredicate(thing, NOTETAKING.distanceTop);
-  console.log("this is distanceTopSubject", distanceTopSubject, thing);
   if (Array.isArray(distanceTopSubject) && distanceTopSubject.length > 0)
     return parseInt(distanceTopSubject[0]);
   if (typeof distanceTopSubject === "string")
@@ -286,7 +288,6 @@ export function processLiterals(
  */
 export function retrieveIdentifier(iri: string): string {
   const url = new URL(iri);
-  console.log("this is url.hash", url.hash.substring(1));
   if (url.hash) return url.hash.substring(1);
   const lastElement = url.pathname.split("/").at(-1);
   if (lastElement) return lastElement;

@@ -148,13 +148,17 @@ export default class DataLoader {
     });
   }
 
-  deleteNotePage(sectionIdentifier: string, item: PageItem): void {
+  deleteNotePage(
+    sectionIdentifier: string,
+    item: PageItem,
+    sectionRemoval = true
+  ): void {
     const index = this.panelMenuItems[sectionIdentifier].findIndex(
       (value) => value.key === item.key
     );
-    console.log("this is index", index);
     this.panelMenuItems[sectionIdentifier].splice(index, 1);
-    this.dataSynchronizer.removeNoteFromSection(item.key, sectionIdentifier);
+    if (sectionRemoval)
+      this.dataSynchronizer.removeNoteFromSection(item.key, sectionIdentifier);
     this.dataSynchronizer.deleteNoteResource(item.key);
   }
 
@@ -165,7 +169,7 @@ export default class DataLoader {
     if (this.notebook)
       this.dataSynchronizer.removeSectionFromNoteBook(item.key, this.notebook);
     for (const pageItem of this.panelMenuItems[item.key]) {
-      this.deleteNotePage(item.key, pageItem);
+      this.deleteNotePage(item.key, pageItem, false);
     }
     delete this.panelMenuItems[item.key];
   }
@@ -185,10 +189,6 @@ export default class DataLoader {
   }
 
   loadData(): void {
-    console.log("this is panelMenuItems", this.panelMenuItems);
-    console.log("this is tabItems", this.tabItems);
-    console.log("loadData in DataLoader has been called", new Date());
-    console.log("this is things", this.things);
     if (this.resourceUrls && this.resourceUrls.length > 0) {
       getThingFromSolidPod(this.resourceUrls[0]).then((thing) => {
         this.processThing(thing);
@@ -214,7 +214,6 @@ export default class DataLoader {
    */
   processNoteBook(thing: Thing): void {
     this.notebook = thing.url;
-    console.log("this is notebook in data-loader", this.notebook);
     const sectionUrls = getSectionUrls(thing);
     // this.tabItems = new Array<Section>(sectionUrls.length);
     for (const section of sectionUrls) {
@@ -245,8 +244,6 @@ export default class DataLoader {
   async processSection(sectionUrl: string): Promise<void> {
     const sectionThing = await getThingFromSolidPod(sectionUrl);
     const position = Number(getPosition(sectionThing));
-    console.log("this is position", position);
-    console.log("this is title", getTitle(sectionThing));
     // const tabItem = new TabItem({
     //   key: retrieveIdentifier(sectionUrl),
     //   label: getTitle(sectionThing),
@@ -264,7 +261,6 @@ export default class DataLoader {
         url: sectionUrl,
       })
     );
-    console.log("this is tabItems", this.tabItems);
     this.panelMenuItems[retrieveIdentifier(sectionUrl)] = [];
     if (hasPages(sectionThing)) {
       const pageUrls = getPageUrls(sectionThing);
@@ -298,7 +294,6 @@ export default class DataLoader {
       if (!pageThing) throw new Error("No PageThing could be found");
       const position = parseInt(getPosition(pageThing));
       const editorContentArray = this.getEditorContentArray(pageThing, dataSet);
-      console.log("this has been called with position", position);
       this.panelMenuItems[sectionIdentifier].splice(
         position,
         0,
@@ -308,10 +303,6 @@ export default class DataLoader {
           url: url,
           editorContent: editorContentArray,
         })
-      );
-      console.log(
-        "this is panelMenuItems",
-        this.panelMenuItems[sectionIdentifier]
       );
     });
   }
@@ -335,7 +326,6 @@ export default class DataLoader {
         );
       }
     }
-    console.log("this is EditorContentArray", editorContentArray);
     return editorContentArray;
   }
 
@@ -437,8 +427,6 @@ export default class DataLoader {
   ) {
     const sectionURL = `${this.rootUrl}${sectionIdentifier}`;
     const targetURL = `${this.rootUrl}${targetIdentifier}`;
-    console.log("this is sectionURL", sectionURL);
-    console.log("this is targetUrl", targetURL);
     const sectionDataset = await getData(sectionURL);
     const targetDataset = await getData(targetURL);
     if (sectionDataset) {
@@ -488,7 +476,6 @@ export default class DataLoader {
     pageIdentifier: string,
     targetIdentifier: string
   ) {
-    console.log("this has been called in linkPage");
     const pageURL = `${this.rootUrl}${pageIdentifier}`;
     const targetURL = `${this.rootUrl}${targetIdentifier}`;
     const dataset = await getData(pageURL);

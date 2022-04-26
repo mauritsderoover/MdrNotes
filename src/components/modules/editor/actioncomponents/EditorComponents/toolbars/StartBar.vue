@@ -17,14 +17,12 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-// import MenuItemProposal from "@/components/modules/editor/actioncomponents/EditorComponents/MenuItemProposal.vue";
 import { Editor } from "@tiptap/vue-3";
 import DividerBar from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/Divider.vue";
 import MenuItem from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/MenuItem.vue";
 import MenuDropDown from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/MenuDropDown.vue";
 import FontFamilies from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/font-families";
 import ColorMenuItem from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/coloritems/ColorMenuItem.vue";
-// import Button from "primevue/button";
 
 interface TrialMenuItem {
   icon: string;

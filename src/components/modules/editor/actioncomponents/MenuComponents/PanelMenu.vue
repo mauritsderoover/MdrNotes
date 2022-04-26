@@ -129,9 +129,6 @@ export default {
       return UniqueComponentId();
     },
   },
-  mounted() {
-    console.log(this.model);
-  },
   methods: {
     onItemClick(event, item, navigate) {
       if (this.isActive(item) && this.activeItem === null) {
@@ -211,7 +208,6 @@ export default {
       ];
     },
     visible(item) {
-      console.log("this is in visible", item);
       return typeof item.visible === "function"
         ? item.visible()
         : item.visible !== false;

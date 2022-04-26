@@ -58,7 +58,6 @@ export async function getData(URI: string) {
 
 export function getContainerName(URI: string) {
   const URIComponents = URI.split("/");
-  console.log("this is URIComponents", URIComponents);
   return decodeURI(URIComponents[URIComponents.length - 2]);
 }
 
@@ -71,7 +70,6 @@ export const deleteContainerContents = async (URI: string) => {
   let dataset = null;
 
   try {
-    console.log("this is getSolidDataSetURI", URI);
     dataset = await getSolidDataset(URI, { fetch });
   } catch (dataset) {
     // TODO Add Error handling
@@ -83,7 +81,6 @@ export const deleteContainerContents = async (URI: string) => {
     const urls = getContainedResourceUrlAll(dataset);
     if (urls.length > 0) {
       for (const url of urls) {
-        console.log("url", url);
         await deleteContainerContents(url);
       }
       await deleteSolidDataset(dataset, { fetch });

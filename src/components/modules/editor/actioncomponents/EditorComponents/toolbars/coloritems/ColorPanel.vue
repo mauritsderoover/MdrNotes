@@ -15,8 +15,8 @@
     <div class="col-12">
       <label for="color-input">Custom: </label>
       <input
-        type="color"
         id="color-input"
+        type="color"
         @input="testFunction($event.target.value)"
       />
     </div>
@@ -63,7 +63,6 @@ export default defineComponent({
   },
   methods: {
     testFunction(event: string): void {
-      console.log("this has been clicked", event);
       this.$emit("update:modelValue", event);
       this.$emit("closeOverlay");
     },

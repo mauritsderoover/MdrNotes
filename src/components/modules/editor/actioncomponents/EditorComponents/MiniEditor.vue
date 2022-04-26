@@ -69,7 +69,6 @@ export default defineComponent({
   },
   watch: {
     modelValue(value) {
-      console.log("this has been called in modelValue watcher");
       const isSame = this.editor.getHTML() === value;
 
       if (isSame) {
@@ -82,7 +81,10 @@ export default defineComponent({
   mounted() {
     this.editor.commands.setContent(this.modelValue, false);
     this.editor.on("update", () => {
-      const content = this.editor.getHTML();
+      let content = "";
+      if (this.editor.getText()) {
+        content = this.editor.getHTML();
+      }
       this.$emit("update:modelValue", content);
       this.$emit("contentUpdated", this.pageContent);
     });
@@ -250,6 +252,7 @@ export default defineComponent({
 
   div.editor-container {
     border: 3px solid #276cb2;
+    overflow-x: scroll;
   }
 
   div.editor-tabs .p-tabmenu .p-tabmenu-nav {

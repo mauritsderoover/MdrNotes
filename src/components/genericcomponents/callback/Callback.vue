@@ -7,10 +7,8 @@ import {
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "call-back",
+  name: "CallBack",
   beforeMount() {
-    console.log("this has been reached");
-
     handleIncomingRedirect({ restorePreviousSession: true }).then(() => {
       this.setLoginInformation(getDefaultSession().info);
       this.$router.push("/editor");
