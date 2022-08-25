@@ -8,7 +8,7 @@
       />
     </div>
     <div class="col-12 p-0 row-shrink editor-tabs">
-      <slot name="tabs"> </slot>
+      <slot name="tabs"></slot>
     </div>
     <div class="col-12 grid p-0 m-0 row-expand">
       <div class="col-2 panel-menu">
@@ -21,11 +21,8 @@
         @click="createNewEditor"
       >
         <mini-editor
-          v-for="editorObj of editors"
+          v-for="editorObj of page.notes"
           :key="editorObj"
-          v-model:left="editorObj.left"
-          v-model:top="editorObj.top"
-          v-model="editorObj.content"
           :page-content="editorObj"
           style="position: absolute"
           :style="{ left: `${editorObj.left}px`, top: `${editorObj.top}px` }"
@@ -43,8 +40,10 @@ import { defineComponent, PropType } from "vue";
 import MenuBarProposal from "@/components/modules/editor/actioncomponents/EditorComponents/toolbars/MenuBar.vue";
 import MiniEditor from "@/components/modules/editor/actioncomponents/EditorComponents/MiniEditor.vue";
 import { Editor } from "@tiptap/vue-3";
-import { PageContent } from "@/components/modules/editor/editor-classes";
 import createEditor from "@/components/modules/editor/actioncomponents/EditorComponents/EditorClass";
+import { Note } from "@/components/modules/editor/classes/note";
+import { Page } from "@/components/modules/editor/classes/page";
+
 export default defineComponent({
   name: "EditorNotes",
   components: {
@@ -54,9 +53,9 @@ export default defineComponent({
     // MenuBar,
   },
   props: {
-    editors: {
-      type: Object as PropType<Array<PageContent>>,
-      default: new Array<PageContent>(),
+    page: {
+      type: Object as PropType<Page>,
+      required: true,
     },
   },
   emits: ["update:editors", "contentUpdated"],
@@ -71,15 +70,8 @@ export default defineComponent({
     if (this.editor === null) this.editor = createEditor();
   },
   methods: {
-    removeEditor(pageContent: PageContent): void {
-      const index = this.editors.findIndex(
-        (value) => value.identifier === pageContent.identifier
-      );
-      if (index !== -1) {
-        const editorsTemp = this.editors;
-        editorsTemp.splice(index, 1);
-        this.$emit("update:editors", editorsTemp);
-      }
+    removeEditor(note: Note): void {
+      this.page.removeNote(note);
     },
     createNewEditor(event: PointerEvent) {
       const id = (event.composedPath().at(0) as HTMLElement).id;
@@ -89,15 +81,7 @@ export default defineComponent({
         id === "editor-container" &&
         (!selection || selection.type !== "Range")
       ) {
-        const editorsTemp = this.editors;
-        editorsTemp.push(
-          new PageContent({
-            top: event.offsetY,
-            left: event.offsetX,
-            content: "",
-          })
-        );
-        this.$emit("update:editors", editorsTemp);
+        this.page.createNote(event.offsetX, event.offsetY, "");
       }
     },
   },
@@ -192,6 +176,7 @@ export default defineComponent({
 
   .editor_header {
     background: #cdd9d9;
+
     .p-tabmenu .p-tabmenu-nav {
       background: #cdd9d9;
       border: none;
@@ -214,6 +199,7 @@ export default defineComponent({
 /* Basic editor styles */
 .ProseMirror {
   padding: 0.5rem;
+
   > * + * {
     margin-top: 0.75em;
   }

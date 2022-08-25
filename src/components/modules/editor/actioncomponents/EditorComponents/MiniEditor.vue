@@ -16,8 +16,8 @@ import { defineComponent, PropType } from "vue";
 import { EditorContent } from "@tiptap/vue-3";
 import { DomHandler } from "primevue/utils";
 import { MiniEditorInterface } from "@/components/modules/editor/actioncomponents/EditorComponents/MiniEditorInterface";
-import { PageContent } from "@/components/modules/editor/editor-classes";
 import createEditor from "@/components/modules/editor/actioncomponents/EditorComponents/EditorClass";
+import { Note } from "@/components/modules/editor/classes/note";
 
 export default defineComponent({
   name: "MiniEditor",
@@ -30,8 +30,8 @@ export default defineComponent({
       default: "",
     },
     pageContent: {
-      type: Object as PropType<PageContent>,
-      default: null,
+      type: Object as PropType<Note>,
+      required: true,
     },
     left: {
       type: Number,
@@ -79,13 +79,14 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.editor.commands.setContent(this.modelValue, false);
+    this.editor.commands.setContent(this.pageContent.content, false);
     this.editor.on("update", () => {
       let content = "";
       if (this.editor.getText()) {
         content = this.editor.getHTML();
       }
-      this.$emit("update:modelValue", content);
+      this.pageContent.setContent(content);
+      this.pageContent.saveToDatabase();
       this.$emit("contentUpdated", this.pageContent);
     });
     this.editor.on("focus", () => {
@@ -94,7 +95,7 @@ export default defineComponent({
     });
     this.editor.on("blur", () => {
       this.editorFocused = false;
-      if (!this.modelValue) {
+      if (!this.pageContent.content) {
         this.$emit("removeEditor");
       }
     });
@@ -137,17 +138,17 @@ export default defineComponent({
           if (this.keepInViewport) {
             if (leftPos >= this.minX && leftPos + width < viewport.width) {
               this.lastPageX = event.pageX;
-              this.$emit("update:left", leftPos);
+              this.pageContent.setLeft(leftPos);
             }
             if (topPos >= this.minY && topPos + height < viewport.height) {
               this.lastPageY = event.pageY;
-              this.$emit("update:top", topPos);
+              this.pageContent.setTop(topPos);
             }
           } else {
             this.lastPageX = event.clientX;
             this.lastPageY = event.clientY;
-            this.$emit("update:left", leftPos);
-            this.$emit("update:top", topPos);
+            this.pageContent.setTop(topPos);
+            this.pageContent.setLeft(leftPos);
           }
         }
       };
@@ -166,6 +167,7 @@ export default defineComponent({
       this.documentDragEndListener = () => {
         if (this.dragging) {
           this.dragging = false;
+          this.pageContent.saveToDatabase();
           this.$emit("contentUpdated", this.pageContent);
           // DomHandler.removeClass(document.body, "p-unselectable-text");
 
@@ -191,6 +193,7 @@ export default defineComponent({
 .editor-wrapper {
   border: 10px solid;
 }
+
 .editor {
   display: flex;
   flex-direction: column;
@@ -274,6 +277,7 @@ export default defineComponent({
 
   .editor_header {
     background: #cdd9d9;
+
     .p-tabmenu .p-tabmenu-nav {
       background: #cdd9d9;
       border: none;
@@ -301,6 +305,7 @@ export default defineComponent({
 /* Basic editor styles */
 .ProseMirror {
   padding: 0.5rem;
+
   > * + * {
     margin-top: 0.75em;
   }

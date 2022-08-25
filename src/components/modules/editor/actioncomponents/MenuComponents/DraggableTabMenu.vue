@@ -109,10 +109,8 @@ import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
 import ContextMenu from "primevue/contextmenu";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
-import {
-  DraggableTabMenu,
-  BaseItem,
-} from "@/components/modules/editor/editor-interfaces";
+import { DraggableTabMenu } from "@/components/modules/editor/editor-interfaces";
+import { Section } from "@/components/modules/editor/classes/section";
 
 export default defineComponent({
   name: "DraggableTabMenu",
@@ -122,7 +120,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Array as PropType<Array<BaseItem>>,
+      type: Array as PropType<Array<Section>>,
       default: null,
     },
     exact: {
@@ -241,7 +239,7 @@ export default defineComponent({
     },
     catchClickEvent(
       event: PointerEvent,
-      item: BaseItem,
+      item: Section,
       index: number,
       navigate?: string
     ) {
@@ -276,7 +274,7 @@ export default defineComponent({
     },
     onItemClick(
       event: PointerEvent,
-      item: BaseItem,
+      item: Section,
       index: number,
       navigate: any
     ) {

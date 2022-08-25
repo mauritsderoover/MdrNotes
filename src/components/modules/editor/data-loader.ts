@@ -38,40 +38,30 @@ import {
   makeId,
   retrieveIdentifier,
 } from "@/components/modules/editor/DataModel";
-import {
-  BaseItem,
-  PanelMenuItems,
-  Section,
-  TabItems,
-} from "@/components/modules/editor/editor-interfaces";
-import {
-  PageContent,
-  PageItem,
-  TabItem,
-} from "@/components/modules/editor/editor-classes";
 import { DCTERMS, RDF } from "@inrupt/vocab-common-rdf";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
 import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
 import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
+import { Notebook } from "@/components/modules/editor/classes/notebook";
+import { Page } from "@/components/modules/editor/classes/page";
+import { Section } from "@/components/modules/editor/classes/section";
+import { Note } from "@/components/modules/editor/classes/note";
+import db from "@/components/modules/editor/MdrNotesDatabase";
 
 export default class DataLoader {
   rootDataSet?: SolidDataset & WithResourceInfo;
   things: Record<string, ThingPersisted>;
   resourceUrls: string[];
   rootUrl: string;
-  panelMenuItems: PanelMenuItems;
-  tabItems: TabItems;
-  notebook?: string;
+  notebook?: Notebook;
   dataSynchronizer: DataSynchronizer;
   initialDataLoaded: boolean;
   highestPosition: number;
-  positionTracker: Record<number, TabItem>;
+  positionTracker: Record<number, Section>;
 
-  constructor(panelMenuItems: PanelMenuItems, tabItems: TabItems) {
+  constructor() {
     this.things = {};
-    this.panelMenuItems = panelMenuItems;
-    this.tabItems = tabItems;
     this.resourceUrls = [];
     this.rootUrl = getRootUrl();
     this.initialDataLoaded = false;
@@ -88,29 +78,29 @@ export default class DataLoader {
         this.getAllContainedUrls();
         this.loadData();
       })
-      .catch(() => this.newNoteBook("First Notebook"));
+      .catch(() => this.newNoteBook());
   }
 
   initialDataLoadedChecker(): Promise<void> {
     return new Promise<void>((resolve) => {
       (function checkRequirement(this: DataLoader) {
-        if (this.checkRequirements()) {
+        if (this.initialDataLoaded) {
           resolve();
-        } else setTimeout(checkRequirement.bind(this), 100);
+        } else setTimeout(checkRequirement.bind(this), 5);
       }.apply(this));
     });
   }
 
-  checkRequirements(): boolean {
-    return (
-      this.tabItems &&
-      this.tabItems.length > 0 &&
-      this.tabItems[0] !== undefined &&
-      this.panelMenuItems &&
-      this.panelMenuItems[this.tabItems[0].key] &&
-      this.panelMenuItems[this.tabItems[0].key].length > 0
-    );
-  }
+  // checkRequirements(): boolean {
+  //   return (
+  //     this.tabItems &&
+  //     this.tabItems.length > 0 &&
+  //     this.tabItems[0] !== undefined &&
+  //     this.panelMenuItems &&
+  //     this.panelMenuItems[this.tabItems[0].key] &&
+  //     this.panelMenuItems[this.tabItems[0].key].length > 0
+  //   );
+  // }
 
   async getRootDataSet(): Promise<void> {
     if (this.rootUrl) {
@@ -120,59 +110,63 @@ export default class DataLoader {
     }
   }
 
-  cleanNotesContainer(): void {
-    this.resourceUrls.forEach((resourceURL) => {
-      getThingFromSolidPod(resourceURL).then((thing) => {
-        if (thing) {
-          if (isPage(thing)) {
-            const sectionUrl = getSectionUrlFromNote(thing);
-            getSolidDataset(sectionUrl, { fetch }).catch(() => {
-              this.dataSynchronizer.deleteNoteResource(thing.url);
-            });
-          }
-          if (isNoteBook(thing)) {
-            const sectionsUrls = getSectionUrls(thing);
-            sectionsUrls.forEach((sectionUrl) => {
-              getSolidDataset(sectionUrl, { fetch }).catch(() => {
-                if (this.notebook) {
-                  this.dataSynchronizer.removeSectionFromNoteBook(
-                    sectionUrl,
-                    this.notebook
-                  );
-                }
-              });
-            });
-          }
-        }
-      });
-    });
-  }
+  // cleanNotesContainer(): void {
+  //   this.resourceUrls.forEach((resourceURL) => {
+  //     getThingFromSolidPod(resourceURL).then((thing) => {
+  //       if (thing) {
+  //         if (isPage(thing)) {
+  //           const sectionUrl = getSectionUrlFromNote(thing);
+  //           getSolidDataset(sectionUrl, { fetch }).catch(() => {
+  //             this.dataSynchronizer.deleteNoteResource(thing.url);
+  //           });
+  //         }
+  //         if (isNoteBook(thing)) {
+  //           const sectionsUrls = getSectionUrls(thing);
+  //           sectionsUrls.forEach((sectionUrl) => {
+  //             getSolidDataset(sectionUrl, { fetch }).catch(() => {
+  //               if (this.notebook) {
+  //                 this.dataSynchronizer.removeSectionFromNoteBook(
+  //                   sectionUrl,
+  //                   this.notebook.key
+  //                 );
+  //               }
+  //             });
+  //           });
+  //         }
+  //       }
+  //     });
+  //   });
+  // }
 
-  deleteNotePage(
-    sectionIdentifier: string,
-    item: PageItem,
-    sectionRemoval = true
-  ): void {
-    const index = this.panelMenuItems[sectionIdentifier].findIndex(
-      (value) => value.key === item.key
-    );
-    this.panelMenuItems[sectionIdentifier].splice(index, 1);
-    if (sectionRemoval)
-      this.dataSynchronizer.removeNoteFromSection(item.key, sectionIdentifier);
-    this.dataSynchronizer.deleteNoteResource(item.key);
-  }
+  // deleteNotePage(
+  //   sectionIdentifier: string,
+  //   item: Page,
+  //   sectionRemoval = true
+  // ): void {
+  //   const index = this.panelMenuItems[sectionIdentifier].findIndex(
+  //     (value) => value.key === item.key
+  //   );
+  //
+  //   this.panelMenuItems[sectionIdentifier].splice(index, 1);
+  //   if (sectionRemoval)
+  //     this.dataSynchronizer.removeNoteFromSection(item.key, sectionIdentifier);
+  //   this.dataSynchronizer.deleteNoteResource(item.key);
+  // }
 
-  deleteSection(item: BaseItem): void {
-    const index = this.tabItems.findIndex((value) => value.key === item.key);
-    this.tabItems.splice(index, 1);
-    this.dataSynchronizer.deleteNoteResource(item.key);
-    if (this.notebook)
-      this.dataSynchronizer.removeSectionFromNoteBook(item.key, this.notebook);
-    for (const pageItem of this.panelMenuItems[item.key]) {
-      this.deleteNotePage(item.key, pageItem, false);
-    }
-    delete this.panelMenuItems[item.key];
-  }
+  // deleteSection(item: Section): void {
+  //   const index = this.tabItems.findIndex((value) => value.key === item.key);
+  //   this.tabItems.splice(index, 1);
+  //   this.dataSynchronizer.deleteNoteResource(item.key);
+  //   if (this.notebook)
+  //     this.dataSynchronizer.removeSectionFromNoteBook(
+  //       item.key,
+  //       this.notebook.key
+  //     );
+  //   for (const pageItem of this.panelMenuItems[item.key]) {
+  //     this.deleteNotePage(item.key, pageItem, false);
+  //   }
+  //   delete this.panelMenuItems[item.key];
+  // }
 
   getAllContainedUrls(): void {
     if (this.rootDataSet) {
@@ -180,12 +174,31 @@ export default class DataLoader {
     }
   }
 
-  newNoteBook(title: string): void {
-    const notebookID = makeId();
-    this.createNoteBook(notebookID, title).then(() => {
-      this.notebook = notebookID;
-      this.newSection();
+  async newNoteBook(): Promise<void> {
+    this.notebook = new Notebook(makeId(), "Your first notebook");
+    console.log("this is notebook in new NoteBook", this.notebook);
+    await this.notebook.saveToDatabase();
+    const section = this.notebook.createSection();
+    await section.saveToDatabase();
+    const page = section.createPage();
+    await page.saveToDatabase();
+
+    this.initialDataLoaded = true;
+
+    Promise.all([
+      this.notebook.saveToSolid(),
+      section.saveToSolid(),
+      page.saveToSolid(),
+    ]).then(() => {
+      if (this.notebook) {
+        Promise.all([
+          section.linkSection(hasSection.NOTEBOOK, this.notebook.key),
+          page.linkPage(hasPage.SECTION, section.key),
+        ]);
+      }
     });
+
+    // this.panelMenuItems[section.key] = [page];
   }
 
   loadData(): void {
@@ -213,29 +226,49 @@ export default class DataLoader {
    * We also only support one notebook currently but this can be increased in the future
    */
   processNoteBook(thing: Thing): void {
-    this.notebook = thing.url;
-    const sectionUrls = getSectionUrls(thing);
-    // this.tabItems = new Array<Section>(sectionUrls.length);
-    for (const section of sectionUrls) {
-      this.processSection(section).then();
-    }
+    db.notebooks
+      .where("key")
+      .equals(retrieveIdentifier(thing.url))
+      .first()
+      .then((notebook) => {
+        if (!notebook) {
+          this.notebook = new Notebook(
+            retrieveIdentifier(thing.url),
+            getTitle(thing)
+          );
+          this.notebook.saveToDatabase().then(() => {
+            if (this.notebook) {
+              const sectionUrls = getSectionUrls(thing);
+              this.notebook.sections = [];
+              for (const section of sectionUrls) {
+                this.processSection(section).then();
+              }
+            }
+          });
+        } else {
+          this.notebook = notebook;
+          this.notebook.loadSectionsAndSectionGroups().then(() => {
+            this.initialDataLoaded = true;
+          });
+        }
+      });
   }
 
-  saveAllPositions(): void {
-    for (const tabPosition in this.tabItems) {
-      this.dataSynchronizer.savePosition(
-        this.tabItems[tabPosition].key,
-        Number(tabPosition)
-      );
-      const menuItems = this.panelMenuItems[this.tabItems[tabPosition].key];
-      for (const pagePosition in menuItems) {
-        this.dataSynchronizer.savePosition(
-          menuItems[pagePosition].key,
-          Number(pagePosition)
-        );
-      }
-    }
-  }
+  // saveAllPositions(): void {
+  //   for (const tabPosition in this.tabItems) {
+  //     this.dataSynchronizer.savePosition(
+  //       this.tabItems[tabPosition].key,
+  //       Number(tabPosition)
+  //     );
+  //     const menuItems = this.panelMenuItems[this.tabItems[tabPosition].key];
+  //     for (const pagePosition in menuItems) {
+  //       this.dataSynchronizer.savePosition(
+  //         menuItems[pagePosition].key,
+  //         Number(pagePosition)
+  //       );
+  //     }
+  //   }
+  // }
 
   /**
    * Sections can contain pages and page groups but currently only pages are supported
@@ -251,78 +284,92 @@ export default class DataLoader {
     // });
     //
     // this.tabItems[position] = tabItem;
-
-    this.tabItems.splice(
-      Number(position),
-      0,
-      new TabItem({
-        key: retrieveIdentifier(sectionUrl),
-        label: getTitle(sectionThing),
-        url: sectionUrl,
-      })
-    );
-    this.panelMenuItems[retrieveIdentifier(sectionUrl)] = [];
-    if (hasPages(sectionThing)) {
-      const pageUrls = getPageUrls(sectionThing);
-      for (const page of pageUrls) {
-        this.processPage(page, retrieveIdentifier(sectionUrl));
-      }
-    } else {
-      const pageIdentifier = makeId();
-      this.createPage(pageIdentifier, "SomeRandomPage", 0).then(() => {
-        this.linkPage(
-          hasPage.SECTION,
-          pageIdentifier,
-          retrieveIdentifier(sectionUrl)
-        );
-      });
-      this.panelMenuItems[retrieveIdentifier(sectionUrl)].push(
-        new PageItem({
-          key: pageIdentifier,
-          url: `${this.rootUrl}${pageIdentifier}`,
-          label: "SomeRandomPage",
-          editorContent: [],
-        })
+    if (this.notebook && this.notebook.id) {
+      const section = new Section(
+        retrieveIdentifier(sectionUrl),
+        this.notebook.id,
+        getTitle(sectionThing),
+        this.notebook.sections.length
       );
+
+      section.saveToDatabase().then(() => {
+        if (this.notebook) {
+          this.notebook.sections.splice(Number(position), 0, section);
+        }
+
+        // this.panelMenuItems[retrieveIdentifier(sectionUrl)] = [];
+        if (hasPages(sectionThing)) {
+          const pageUrls = getPageUrls(sectionThing);
+          for (const page of pageUrls) {
+            this.processPage(page, section);
+          }
+        } else {
+          const pageIdentifier = makeId();
+          this.createPage(pageIdentifier, "SomeRandomPage", 0).then(() => {
+            this.linkPage(
+              hasPage.SECTION,
+              pageIdentifier,
+              retrieveIdentifier(sectionUrl)
+            );
+          });
+          const page = section.createPage();
+          page.saveToDatabase();
+          page.saveToSolid().then(() => {
+            page.linkPage(hasPage.SECTION, section.key);
+          });
+        }
+      });
     }
   }
 
-  processPage(url: string, sectionIdentifier: string): void {
+  processPage(url: string, section: Section): void {
     getData(url).then((dataSet) => {
       if (!dataSet) throw new Error("No dataset could be found");
       const pageThing = getThing(dataSet, url);
       if (!pageThing) throw new Error("No PageThing could be found");
       const position = parseInt(getPosition(pageThing));
-      const editorContentArray = this.getEditorContentArray(pageThing, dataSet);
-      this.panelMenuItems[sectionIdentifier].splice(
-        position,
-        0,
-        new PageItem({
-          label: getTitle(pageThing),
-          key: retrieveIdentifier(url),
-          url: url,
-          editorContent: editorContentArray,
-        })
-      );
+      if (section.id) {
+        const page = new Page(
+          retrieveIdentifier(url),
+          getTitle(pageThing),
+          section.id,
+          position
+        );
+        page.saveToDatabase().then(() => {
+          console.log("is this part even reached");
+          page.notes = this.getEditorContentArray(pageThing, dataSet, page);
+          console.log("this is page.notes", page.notes);
+          page.saveToDatabase().then();
+        });
+
+        section.pages.splice(position, 0, page);
+        this.initialDataLoaded = true;
+      }
     });
   }
 
   getEditorContentArray(
     thing: ThingPersisted,
-    dataset: SolidDataset
-  ): PageContent[] {
-    const editorContentArray = new Array<PageContent>();
+    dataset: SolidDataset,
+    page: Page
+  ): Note[] {
+    const editorContentArray = new Array<Note>();
     const noteContentUrls = getNoteContentUrl(thing);
+    console.log("this is thing", thing);
+    console.log("this is noteContentUrls", noteContentUrls);
     for (const noteContentUrl of noteContentUrls) {
       const editorContentThing = getThing(dataset, noteContentUrl);
-      if (editorContentThing) {
+      console.log("this is the editorContentThing", editorContentThing);
+      if (editorContentThing && page.id) {
+        console.log("do we get after this if clause");
         editorContentArray.push(
-          new PageContent({
-            identifier: retrieveIdentifier(noteContentUrl),
-            top: getDistanceTop(editorContentThing),
-            left: getDistanceLeft(editorContentThing),
-            content: getEditorContent(getPageText(editorContentThing)),
-          })
+          new Note(
+            retrieveIdentifier(noteContentUrl),
+            page.id,
+            getDistanceTop(editorContentThing),
+            getDistanceLeft(editorContentThing),
+            getEditorContent(getPageText(editorContentThing))
+          )
         );
       }
     }
@@ -351,68 +398,68 @@ export default class DataLoader {
     );
   }
 
-  newSection(): string {
-    if (this.notebook) {
-      const sectionIdentifier = makeId();
-      const pageIdentifier = makeId();
+  // newSection(): string {
+  //   if (this.notebook) {
+  //     const sectionIdentifier = makeId();
+  //     const pageIdentifier = makeId();
+  //
+  //     this.createSection(
+  //       sectionIdentifier,
+  //       "New Section",
+  //       this.tabItems.length
+  //     ).then(() => {
+  //       if (this.notebook)
+  //         this.linkSection(
+  //           hasSection.NOTEBOOK,
+  //           sectionIdentifier,
+  //           retrieveIdentifier(this.notebook)
+  //         ).then();
+  //       this.createPage(pageIdentifier, "New Page", 0).then(() => {
+  //         this.linkPage(
+  //           hasPage.SECTION,
+  //           pageIdentifier,
+  //           sectionIdentifier
+  //         ).then();
+  //       });
+  //     });
+  //     this.tabItems.push(
+  //       new TabItem({
+  //         label: "Untitled",
+  //         url: this.rootUrl + sectionIdentifier,
+  //         key: sectionIdentifier,
+  //       })
+  //     );
+  //     this.panelMenuItems[sectionIdentifier] = [
+  //       new PageItem({
+  //         label: "New Page",
+  //         url: this.rootUrl + pageIdentifier,
+  //         key: pageIdentifier,
+  //         editorContent: [],
+  //       }),
+  //     ];
+  //     return sectionIdentifier;
+  //   }
+  //   throw new Error("A notebook has not yet been identifier");
+  // }
 
-      this.createSection(
-        sectionIdentifier,
-        "New Section",
-        this.tabItems.length
-      ).then(() => {
-        if (this.notebook)
-          this.linkSection(
-            hasSection.NOTEBOOK,
-            sectionIdentifier,
-            retrieveIdentifier(this.notebook)
-          ).then();
-        this.createPage(pageIdentifier, "New Page", 0).then(() => {
-          this.linkPage(
-            hasPage.SECTION,
-            pageIdentifier,
-            sectionIdentifier
-          ).then();
-        });
-      });
-      this.tabItems.push(
-        new TabItem({
-          label: "Untitled",
-          url: this.rootUrl + sectionIdentifier,
-          key: sectionIdentifier,
-        })
-      );
-      this.panelMenuItems[sectionIdentifier] = [
-        new PageItem({
-          label: "New Page",
-          url: this.rootUrl + pageIdentifier,
-          key: pageIdentifier,
-          editorContent: [],
-        }),
-      ];
-      return sectionIdentifier;
-    }
-    throw new Error("A notebook has not yet been identifier");
-  }
-
-  newPage(sectionIdentifier: string): void {
-    const pageIdentifier = makeId();
-    this.createPage(
-      pageIdentifier,
-      "New Page",
-      this.panelMenuItems[sectionIdentifier].length
-    ).then(() => {
-      this.linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier).then();
-    });
-    this.panelMenuItems[sectionIdentifier].push(
-      new PageItem({
-        label: "New Page",
-        url: this.rootUrl + pageIdentifier,
-        key: pageIdentifier,
-        editorContent: [],
-      })
-    );
-  }
+  // newPage(sectionIdentifier: string): void {
+  //   const pageIdentifier = makeId();
+  //   this.createPage(
+  //     pageIdentifier,
+  //     "New Page",
+  //     this.panelMenuItems[sectionIdentifier].length
+  //   ).then(() => {
+  //     this.linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier).then();
+  //   });
+  //   this.panelMenuItems[sectionIdentifier].push(
+  //     new PageItem({
+  //       label: "New Page",
+  //       url: this.rootUrl + pageIdentifier,
+  //       key: pageIdentifier,
+  //       editorContent: [],
+  //     })
+  //   );
+  // }
 
   /**
    * A section can be added to either a notebook or a section group
