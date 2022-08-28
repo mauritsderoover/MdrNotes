@@ -310,9 +310,6 @@ export default defineComponent({
     addTab() {
       this.$emit("add-tab");
     },
-    testFunction(event: any) {
-      console.log("the testFunction has been reached", event);
-    },
     processDragEnd(): void {
       this.drag = false;
       this.$emit("drag-ended");

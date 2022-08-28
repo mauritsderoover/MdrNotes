@@ -176,7 +176,6 @@ export default class DataLoader {
 
   async newNoteBook(): Promise<void> {
     this.notebook = new Notebook(makeId(), "Your first notebook");
-    console.log("this is notebook in new NoteBook", this.notebook);
     await this.notebook.saveToDatabase();
     const section = this.notebook.createSection();
     await section.saveToDatabase();
@@ -254,22 +253,6 @@ export default class DataLoader {
       });
   }
 
-  // saveAllPositions(): void {
-  //   for (const tabPosition in this.tabItems) {
-  //     this.dataSynchronizer.savePosition(
-  //       this.tabItems[tabPosition].key,
-  //       Number(tabPosition)
-  //     );
-  //     const menuItems = this.panelMenuItems[this.tabItems[tabPosition].key];
-  //     for (const pagePosition in menuItems) {
-  //       this.dataSynchronizer.savePosition(
-  //         menuItems[pagePosition].key,
-  //         Number(pagePosition)
-  //       );
-  //     }
-  //   }
-  // }
-
   /**
    * Sections can contain pages and page groups but currently only pages are supported
    * @param sectionUrl
@@ -277,13 +260,6 @@ export default class DataLoader {
   async processSection(sectionUrl: string): Promise<void> {
     const sectionThing = await getThingFromSolidPod(sectionUrl);
     const position = Number(getPosition(sectionThing));
-    // const tabItem = new TabItem({
-    //   key: retrieveIdentifier(sectionUrl),
-    //   label: getTitle(sectionThing),
-    //   url: sectionUrl,
-    // });
-    //
-    // this.tabItems[position] = tabItem;
     if (this.notebook && this.notebook.id) {
       const section = new Section(
         retrieveIdentifier(sectionUrl),
@@ -336,9 +312,7 @@ export default class DataLoader {
           position
         );
         page.saveToDatabase().then(() => {
-          console.log("is this part even reached");
           page.notes = this.getEditorContentArray(pageThing, dataSet, page);
-          console.log("this is page.notes", page.notes);
           page.saveToDatabase().then();
         });
 
@@ -355,13 +329,9 @@ export default class DataLoader {
   ): Note[] {
     const editorContentArray = new Array<Note>();
     const noteContentUrls = getNoteContentUrl(thing);
-    console.log("this is thing", thing);
-    console.log("this is noteContentUrls", noteContentUrls);
     for (const noteContentUrl of noteContentUrls) {
       const editorContentThing = getThing(dataset, noteContentUrl);
-      console.log("this is the editorContentThing", editorContentThing);
       if (editorContentThing && page.id) {
-        console.log("do we get after this if clause");
         editorContentArray.push(
           new Note(
             retrieveIdentifier(noteContentUrl),
@@ -397,69 +367,6 @@ export default class DataLoader {
       }
     );
   }
-
-  // newSection(): string {
-  //   if (this.notebook) {
-  //     const sectionIdentifier = makeId();
-  //     const pageIdentifier = makeId();
-  //
-  //     this.createSection(
-  //       sectionIdentifier,
-  //       "New Section",
-  //       this.tabItems.length
-  //     ).then(() => {
-  //       if (this.notebook)
-  //         this.linkSection(
-  //           hasSection.NOTEBOOK,
-  //           sectionIdentifier,
-  //           retrieveIdentifier(this.notebook)
-  //         ).then();
-  //       this.createPage(pageIdentifier, "New Page", 0).then(() => {
-  //         this.linkPage(
-  //           hasPage.SECTION,
-  //           pageIdentifier,
-  //           sectionIdentifier
-  //         ).then();
-  //       });
-  //     });
-  //     this.tabItems.push(
-  //       new TabItem({
-  //         label: "Untitled",
-  //         url: this.rootUrl + sectionIdentifier,
-  //         key: sectionIdentifier,
-  //       })
-  //     );
-  //     this.panelMenuItems[sectionIdentifier] = [
-  //       new PageItem({
-  //         label: "New Page",
-  //         url: this.rootUrl + pageIdentifier,
-  //         key: pageIdentifier,
-  //         editorContent: [],
-  //       }),
-  //     ];
-  //     return sectionIdentifier;
-  //   }
-  //   throw new Error("A notebook has not yet been identifier");
-  // }
-
-  // newPage(sectionIdentifier: string): void {
-  //   const pageIdentifier = makeId();
-  //   this.createPage(
-  //     pageIdentifier,
-  //     "New Page",
-  //     this.panelMenuItems[sectionIdentifier].length
-  //   ).then(() => {
-  //     this.linkPage(hasPage.SECTION, pageIdentifier, sectionIdentifier).then();
-  //   });
-  //   this.panelMenuItems[sectionIdentifier].push(
-  //     new PageItem({
-  //       label: "New Page",
-  //       url: this.rootUrl + pageIdentifier,
-  //       key: pageIdentifier,
-  //       editorContent: [],
-  //     })
-  //   );
-  // }
 
   /**
    * A section can be added to either a notebook or a section group

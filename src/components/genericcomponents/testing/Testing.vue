@@ -31,28 +31,14 @@ export default defineComponent({
       await notebook.saveToDatabase();
       await notebook1.saveToDatabase();
 
-      console.log(
-        "this is notebook.id after notebook instantiation",
-        notebook.id
-      );
       const section = notebook.createSection();
-      console.log("this is section", section);
       await notebook.saveToDatabase();
       const page = section.createPage();
-      console.log("this is page", page);
       await section.saveToDatabase();
       const note = page.createNote();
-      console.log("this is note", note);
       await page.saveToDatabase();
-      // notebook.save().then((value) => {
-      //   console.log("this is value", value);
-      //   console.log("this is noteboo", notebook);
-      //   notebook.id = value;
-      // });
-      console.log("this is notebook", notebook);
     },
     async loadData(): Promise<void> {
-      console.log("this is db");
       db.transaction(
         "r",
         [db.notebooks, db.sections, db.sectionGroups],

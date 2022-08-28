@@ -30,6 +30,7 @@ export class Note implements INote {
   left: number;
   top: number;
   content: string;
+  private saveToDatabaseCalled: boolean;
 
   constructor(
     key: string,
@@ -45,6 +46,7 @@ export class Note implements INote {
     this.left = left;
     this.top = top;
     this.content = content;
+    this.saveToDatabaseCalled = false;
   }
 
   setLeft(left: number): void {
@@ -60,6 +62,7 @@ export class Note implements INote {
   }
 
   saveToDatabase() {
+    this.saveToDatabaseCalled = true;
     return db.transaction("rw", db.notes, async () => {
       this.id = await db.notes.put(
         new Note(
@@ -75,9 +78,11 @@ export class Note implements INote {
   }
 
   deleteFromDatabase() {
-    return db.transaction("rw", db.notes, async () => {
-      await db.notes.delete(this.id);
-    });
+    if (this.saveToDatabaseCalled && this.id) {
+      return db.transaction("rw", db.notes, async () => {
+        if (!this.id) await db.notes.delete(this.id);
+      });
+    }
   }
 
   removeNoteFromPage(pageIdentifier: string) {
