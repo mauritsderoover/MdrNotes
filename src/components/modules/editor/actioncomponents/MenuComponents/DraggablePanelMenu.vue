@@ -124,12 +124,8 @@ import { UniqueComponentId } from "primevue/utils";
 import draggable from "vuedraggable";
 import { compareObject } from "../../../../genericcomponents/utils/utils";
 import ContextMenu from "primevue/contextmenu";
-import {
-  DraggablePanelMenu,
-  BaseItem,
-} from "@/components/modules/editor/editor-interfaces";
-import { PageItem } from "@/components/modules/editor/editor-classes";
-import component from "*.vue";
+import { DraggablePanelMenu } from "@/components/modules/editor/editor-interfaces";
+import { Page } from "@/components/modules/editor/classes/page";
 
 export default defineComponent({
   name: "DraggablePanelMenu",
@@ -139,7 +135,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Array as PropType<Array<PageItem>>,
+      type: Array as PropType<Array<Page>>,
       default: null,
     },
     sectionIdentifier: {
@@ -175,7 +171,6 @@ export default defineComponent({
     "label-changed",
     "dragEnded",
     "delete-item",
-    "load-item",
   ],
   data(): DraggablePanelMenu {
     return {
@@ -215,6 +210,7 @@ export default defineComponent({
         this.activeItem = undefined; // is this necessary?
         this.doubleClickedItem = undefined; // is this necessary?
         if (this.model.length > 1) {
+          console.log("this has been called in model.length watcher");
           this.changeLabel = true;
           this.activeItem = this.model[this.model.length - 1];
           this.doubleClickedItem = this.activeItem;
@@ -234,6 +230,11 @@ export default defineComponent({
     },
   },
   mounted() {
+    if (this.model) {
+      console.log("has this been called in mounted?", this.model);
+      this.activeItem = this.model[0];
+      console.log("this is activeItem", this.activeItem);
+    }
     document.addEventListener("click", this.onClickOutside);
   },
   beforeUnmount() {
@@ -242,9 +243,6 @@ export default defineComponent({
   methods: {
     deleteAction(): void {
       this.$emit("delete-item", this.rightClickedItem);
-    },
-    loadItem(): void {
-      this.$emit("load-item", this.rightClickedItem);
     },
     changeMenuItem(event: any) {
       this.$emit("tab-change", event);
@@ -388,6 +386,14 @@ export default defineComponent({
       ];
     },
     isActive(item: any) {
+      console.log(
+        "this is isActive in panelMenu",
+        item,
+        this.activeItem,
+        this.expandedKeys
+          ? this.expandedKeys[item.key]
+          : item === this.activeItem
+      );
       return this.expandedKeys
         ? this.expandedKeys[item.key]
         : item === this.activeItem;
@@ -422,7 +428,7 @@ export default defineComponent({
         ? item.disabled()
         : item.disabled;
     },
-    onImageRightClick(event: any, element: PageItem, index: number) {
+    onImageRightClick(event: any, element: Page, index: number) {
       (this.$refs.menu as ContextMenu).show(event);
       this.rightClickedItem = element;
       this.rightClickedIndex = index;

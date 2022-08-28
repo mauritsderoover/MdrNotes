@@ -5,6 +5,7 @@ import Callback from "@/components/genericcomponents/callback/Callback.vue";
 import { getDefaultSession, login } from "@inrupt/solid-client-authn-browser";
 import NotFound from "@/components/genericcomponents/notfound/NotFound.vue";
 import LogOut from "@/components/genericcomponents/logout/LogOut.vue";
+import Testing from "@/components/genericcomponents/testing/Testing.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -32,6 +33,11 @@ const routes: Array<RouteRecordRaw> = [
     name: "Logout",
     component: LogOut,
   },
+  {
+    path: "/testing",
+    name: "Testing",
+    component: Testing,
+  },
 ];
 
 const router = createRouter({
@@ -46,7 +52,8 @@ router.beforeEach((to, from, next) => {
     to.path !== "/logout" &&
     to.path !== "/" &&
     to.path !== "/login" &&
-    to.name !== "NotFound"
+    to.name !== "NotFound" &&
+    to.name !== "Testing"
   ) {
     login({
       oidcIssuer: "https://solidcommunity.net/",

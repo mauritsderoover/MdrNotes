@@ -21,10 +21,7 @@ import {
   buildThing,
   createSolidDataset,
   createThing,
-  getContainedResourceUrlAll,
   getThing,
-  getThingAll,
-  Iri,
   saveSolidDatasetAt,
   setThing,
   Thing,
@@ -35,20 +32,9 @@ import NOTETAKING from "@/components/genericcomponents/vocabs/NOTETAKING";
 import { fetch } from "@inrupt/solid-client-authn-browser";
 import { getData } from "@/components/genericcomponents/utils/utils";
 import { VocabTerm } from "@inrupt/solid-common-vocab";
-import {
-  BaseItem,
-  PanelMenuItem,
-  PanelMenuItems,
-  TabItems,
-} from "@/components/modules/editor/editor-interfaces";
 // import { XmlSchemaTypeIri } from "@inrupt/solid-client/src/datatypes";
 // import { IriString } from "@inrupt/solid-client/src/interfaces";
 import SCHEMA from "@/components/genericcomponents/vocabs/SCHEMA";
-import { PageItem, TabItem } from "@/components/modules/editor/editor-classes";
-import DataLoader from "@/components/modules/editor/data-loader";
-import DataSynchronizer from "@/components/modules/editor/data-synchronizer";
-
-const ROOT_URL = `https://mauritsderoover.solidcommunity.net/notes/`;
 
 export type XmlSchemaTypeIri =
   typeof xmlSchemaTypes[keyof typeof xmlSchemaTypes];
@@ -287,6 +273,7 @@ export function processLiterals(
  * @param iri
  */
 export function retrieveIdentifier(iri: string): string {
+  console.log("this is the incoming uri", iri);
   const url = new URL(iri);
   if (url.hash) return url.hash.substring(1);
   const lastElement = url.pathname.split("/").at(-1);
@@ -321,8 +308,50 @@ export function makeId(length = 28): string {
   return result;
 }
 
-export function getRootUrl(): string {
+export function getRootUrl(ending = "/notes/"): string {
   const rootUrl = localStorage.getItem("origin");
-  if (rootUrl) return rootUrl + "/notes/";
+  if (rootUrl) return rootUrl + ending;
   throw new Error("No rooturl has been stored yet");
+}
+
+export async function createNoteTakingElement(
+  identifier: string,
+  title: string,
+  URI: string,
+  position?: number
+): Promise<void> {
+  const url = `${getRootUrl()}${identifier}`;
+  const thing = buildThing(createThing({ url: url }))
+    .addUrl(RDF.type, URI)
+    .addStringNoLocale(DCTERMS.title, title);
+
+  if (position !== undefined) thing.addInteger(SCHEMA.position, position);
+
+  await saveSolidDatasetAt(url, setThing(createSolidDataset(), thing.build()), {
+    fetch,
+  });
+}
+
+export function getIdentifierUrl(mainUrl: string, identifier: string): string {
+  return mainUrl + "#" + identifier;
+}
+
+export function saveTitle(identifier: string, newTitle: string): void {
+  const URL = `${getRootUrl()}${identifier}`;
+  getData(URL).then(async (dataSet) => {
+    if (dataSet) {
+      let thing = getThing(dataSet, URL);
+      if (!thing) throw new Error("No thing could be retrieved");
+      if (isPage(thing) || isSection(thing)) {
+        thing = buildThing(thing)
+          .setStringNoLocale(DCTERMS.title, newTitle)
+          .build();
+        await saveSolidDatasetAt(URL, setThing(dataSet, thing), {
+          fetch,
+        });
+      } else {
+        throw new Error("Thing is not a page or a section");
+      }
+    }
+  });
 }
