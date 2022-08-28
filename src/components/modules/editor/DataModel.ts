@@ -273,7 +273,6 @@ export function processLiterals(
  * @param iri
  */
 export function retrieveIdentifier(iri: string): string {
-  console.log("this is the incoming uri", iri);
   const url = new URL(iri);
   if (url.hash) return url.hash.substring(1);
   const lastElement = url.pathname.split("/").at(-1);
