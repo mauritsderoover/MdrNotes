@@ -115,7 +115,6 @@ export class Page implements IPage {
       } else {
         this.notes = [note];
       }
-      this.notes.push(note);
       note.saveToDatabase().then();
       return note;
     } else {
